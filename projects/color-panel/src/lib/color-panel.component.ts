@@ -5,10 +5,9 @@ import { fromEvent, map, merge, of, startWith, switchMap, takeUntil } from 'rxjs
 import { JsonPipe } from '@angular/common';
 
 @Component({
-  selector: 'lib-color-panel',
-  standalone: true,
-  imports: [ JsonPipe ],
-  template: `
+    selector: 'lib-color-panel',
+    imports: [JsonPipe],
+    template: `
     {{ drag() | json}}
     <div class="color-panel" #colorPanel>
       <div class="handler"></div>
@@ -25,7 +24,7 @@ import { JsonPipe } from '@angular/common';
       </div>
     </div>
   `,
-  styles: `
+    styles: `
     *, *::before, *::after {
       box-sizing: border-box;
     }
