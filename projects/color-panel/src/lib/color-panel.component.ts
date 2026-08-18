@@ -53,7 +53,7 @@ export class ColorPanelComponent {
   alphaPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaPanel');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
-  color = signal<string>('#b6ff9d');
+  color = signal<string>('#0021ff');
   hue = signal<number>(0);
   saturation = signal<number>(0);
   value = signal<number>(1);
@@ -80,6 +80,8 @@ export class ColorPanelComponent {
         const alpha = getOpacityFromHex(initialColor);
         const { r, g, b } = hexToRgb(initialColor);
         const { h, s, v } = rgbToHsv(r, g, b);
+        console.log(r, g,b)
+        console.log(h, s,v)
         this.hue.set(h);
         this.saturation.set(s);
         this.value.set(v);
