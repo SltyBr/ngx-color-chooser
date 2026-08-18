@@ -1,175 +1,138 @@
-import { afterNextRender, AfterViewInit, Component, computed, ElementRef, signal, Signal, viewChild, WritableSignal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+  Signal,
+  viewChild,
+} from '@angular/core';
 import { drag$ } from './utils/drag.observable';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { fromEvent, map, merge, of, startWith, switchMap, takeUntil } from 'rxjs';
-import { JsonPipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgStyle } from '@angular/common';
+import { hexToRgb, hsvToRgb, RgbColor, rgbToHsv } from './utils/utils';
+import { RgbStrPipe } from './rgb-string.pipe';
 
 @Component({
-    selector: 'lib-color-panel',
-    imports: [JsonPipe],
-    template: `
-    {{ drag() | json}}
-    <div class="color-panel" #colorPanel>
-      <div class="handler"></div>
+  selector: 'lib-color-panel',
+  imports: [NgStyle, RgbStrPipe],
+  template: `
+    <div class="color-panel" #colorPanel [ngStyle]="{
+      'background-color': hueColorPanel()
+    }">
+      <div class="handler" #colorHandler></div>
       <div class="white-gradient"></div>
       <div class="black-gradient"></div>
     </div>
-    <div class="controls">
-      <div class="hue-panel">
-        <div class="handler"></div>
-      </div>
-      <div class="alpha-panel">
-        <div class="alpha-placeholder"></div>
-        <div class="handler"></div>
-      </div>
+    <div class="settings">
+      <div class="preview" [style.backgroundColor]="rgba() | rgbStr"></div>
+      <div class="controls">
+        <div class="hue-panel" #huePanel>
+          <div class="handler centered-vertical" #hueHandler></div>
+        </div>
+        <div class="alpha-panel" #alphaPanel [ngStyle]="{
+          '--hueColor': hueColorPanel(),
+        }">
+          <div class="alpha-placeholder"></div>
+          <div class="handler centered-vertical" #alphaHandler></div>
+        </div>
+    </div>
     </div>
   `,
-    styles: `
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-
-    :host {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 100%;
-      height: 100%;
-
-      padding: 16px;
-      border-radius: 8px;
-      background-color: white;
-    }
-
-    .color-panel {
-      background-color: red;
-      position: relative;
-      cursor: crosshair;
-      height: 100%;
-      width: 100%;
-      border-radius: 8px;
-
-      & .white-gradient, .black-gradient {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        background-repeat: no-repeat;
-        border-radius: 8px;
-      }
-
-      & .white-gradient {
-        background-image: linear-gradient(270deg, #fff0, #fff);
-      }
-
-      & .black-gradient {
-        background-image: linear-gradient(180deg, #0000, #000);
-      }
-    }
-
-    .controls {
-      display: flex;
-      gap: 8px;
-      flex-direction: column;
-    }
-
-    .hue-panel {
-      width: 100%;
-      height: 12px;
-      background-repeat: no-repeat;
-      background-image: linear-gradient(
-        90deg,
-        red 0,
-        #ff0 17%,
-        #0f0 33%,
-        #0ff,
-        #00f 67%,
-        #f0f 83%,
-        red
-      );
-      position: relative;
-
-      border-radius: 100px;
-      cursor: pointer;
-    }
-
-    .alpha-panel {
-      width: 100%;
-      height: 12px;
-      background-image: linear-gradient(
-        90deg,
-        white 0,
-        red
-      );
-      position: relative;
-
-      border-radius: 100px;
-      cursor: pointer;
-
-      & .alpha-placeholder {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: white;
-
-        background-image: 
-          linear-gradient(45deg, #ccc 25%, transparent 25%),
-          linear-gradient(-45deg, #ccc 25%, transparent 25%),
-          linear-gradient(45deg, transparent 75%, #ccc 75%),
-          linear-gradient(-45deg, transparent 75%, #ccc 75%);
-        background-size: 6px 6px;
-        background-position: 0 0, 0 3px, 3px -3px, -3px 0px;
-        opacity: 30%;
-        border-radius: 100px;
-      }
-    }
-
-    .handler {
-      width: 14px;
-      height: 14px;
-      border: 4px solid white;
-      border-radius: 50%;
-      position: absolute;
-      left: -1px;
-      top: -1px;
-    }
-  `
+  styleUrls: ['color-panel.component.scss'],
 })
 export class ColorPanelComponent {
-  colorPanel = viewChild.required<ElementRef>('colorPanel');
-  initial$ = of({ left: 0, top: 0 });
+  colorPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('colorPanel');
+  colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
 
-  drag = toSignal(merge(
-    of({ left: 0, top: 0 }),
-    fromEvent<MouseEvent>(document, 'mousedown').pipe(
-      switchMap((mouseDownEvent) => {
-        mouseDownEvent.preventDefault();
-        mouseDownEvent.stopPropagation();
+  huePanel: Signal<ElementRef<HTMLElement>> = viewChild.required('huePanel');
+  hueHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('hueHandler');
 
-        return fromEvent<MouseEvent>(document, 'mousemove').pipe(
-          startWith(mouseDownEvent),
-          map(event => ({ top: event.clientY, left: event.clientX })),
-          takeUntil(fromEvent<MouseEvent>(document, 'mouseup')),
-        );
-      }),
-    )
-  ))
+  alphaPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaPanel');
+  alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
+
+  color = signal<string>('#5ed933');
+  hue = signal<number>(0);
+  saturation = signal<number>(0);
+  value = signal<number>(1);
+  alpha = signal<number>(0.5);
+
+  hueColorPanel = computed(() => {
+    const { r, g, b } = hsvToRgb({ h: this.hue(), s: 1, v: 1 });
+
+    return `rgb(${r}, ${g}, ${b})`;
+  });
+  
+  rgba = computed<RgbColor & { a: number }>(() => {
+    const { r, g, b } = hsvToRgb({ h: this.hue(), s: this.saturation(), v: this.value() });
+
+    return { r, g, b, a: this.alpha() };
+  });
+
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
     afterNextRender({
       read: () => {
-        // console.log(this.colorPanel().nativeElement)
-      }
-    })
+        const initialColor = this.color();
+        const { r, g, b } = hexToRgb(initialColor);
+        const { h, s, v } = rgbToHsv(r, g, b);
+        this.hue.set(h);
+        this.saturation.set(s);
+        this.value.set(v);
+        const colorPanelEl = this.colorPanel().nativeElement;
+        const colorPanelRect = colorPanelEl.getBoundingClientRect();
+        const colorHandlerEl = this.colorPanelHandler().nativeElement;
+        const colorPanelHandlerRect = colorHandlerEl.getBoundingClientRect();
+        const initialPanelX = this.saturation() * colorPanelRect.width;
+        const initialPanelY = (1 - this.value()) * colorPanelRect.height;
+
+        drag$(colorPanelEl, colorPanelHandlerRect, { top: initialPanelY, left: initialPanelX })
+          .pipe(
+            takeUntilDestroyed(this.destroyRef),
+          )
+          .subscribe(({ top, left, containerRect: { width, height } }) => {
+            colorHandlerEl.style.top = `${top}px`;
+            colorHandlerEl.style.left = `${left}px`;
+
+            const s = left / width;
+            const v = 1 - (top / height);
+            this.saturation.set(s);
+            this.value.set(v);
+          });
+
+        const huePanelEl = this.huePanel().nativeElement;
+        const hueHandlerEl = this.hueHandler().nativeElement;
+        const hueHandlerRect = hueHandlerEl.getBoundingClientRect();
+        const initialHuePanelX = this.hue() * huePanelEl.getBoundingClientRect().width / 360;
+
+        drag$(huePanelEl, hueHandlerRect, { left: initialHuePanelX, top: 0 })
+          .pipe(
+            takeUntilDestroyed(this.destroyRef),
+          ) 
+          .subscribe(({ left, containerRect: { width } }) => {
+            hueHandlerEl.style.left = `${left}px`;
+            const hue = left / width * 360;
+
+            this.hue.set(hue);
+          });
+
+        const alphaPanelEl = this.alphaPanel().nativeElement;
+        const alphaHandlerEl = this.alphaHandler().nativeElement;
+        const alphaHandlerRect = alphaHandlerEl.getBoundingClientRect();
+        const initialAlphaX = alphaPanelEl.getBoundingClientRect().width * this.alpha();
+
+        drag$(alphaPanelEl, alphaHandlerRect, { top: 0, left: initialAlphaX })
+          .pipe(
+            takeUntilDestroyed(this.destroyRef),
+          )
+          .subscribe(({ left, containerRect: { width } }) => {
+            alphaHandlerEl.style.left = `${left}px`;
+            this.alpha.set(left / width);
+          });
+      },
+    });
   }
-
-  test = computed(() => {
-    const panel = this.colorPanel().nativeElement;
-    console.log(panel)
-
-    return 123;
-  });
 }

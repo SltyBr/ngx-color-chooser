@@ -1,11 +1,15 @@
-import { Directive, ElementRef, inject, output } from '@angular/core';
+import { afterNextRender, DestroyRef, Directive, ElementRef, inject } from '@angular/core';
 import { drag$ } from '../utils/drag.observable';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Directive({
     selector: '[drag]',
-    standalone: false
+    standalone: true
 })
 export class DragDirective {
-  drag = toSignal(drag$(inject(ElementRef).nativeElement));
+  private readonly elRef: ElementRef<HTMLElement> = inject(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+  }
 }
