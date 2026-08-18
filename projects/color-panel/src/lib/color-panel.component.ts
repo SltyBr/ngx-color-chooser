@@ -9,10 +9,10 @@ import {
   Signal,
   viewChild,
 } from '@angular/core';
-import { drag$ } from './utils/drag.observable';
+import { drag$ } from './helpers/drag.observable';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgStyle } from '@angular/common';
-import { getOpacityFromHex, hexToRgb, hsvToRgb, RgbColor, rgbToHsv } from './utils/utils';
+import { getOpacityFromHex, hexToRgb, hsvToRgb, RgbColor, rgbToHsv } from './helpers/utils';
 import { RgbStrPipe } from './rgb-string.pipe';
 
 @Component({
@@ -53,7 +53,7 @@ export class ColorPanelComponent {
   alphaPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaPanel');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
-  color = signal<string>('#0021ff');
+  color = signal<string>('#4f64ec');
   hue = signal<number>(0);
   saturation = signal<number>(0);
   value = signal<number>(1);
