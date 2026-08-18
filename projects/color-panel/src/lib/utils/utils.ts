@@ -10,36 +10,30 @@ export interface RgbColor {
   b: number;
 }
 
-
 export const decimalToHex = (decimal: number) => {
   const hex = decimal.toString(16);
 
   return hex.length === 2 ? hex : `0${hex}`;
-}
+};
 
 const hexToDecimal = (hex: string) => parseInt(hex, 16);
 
 export const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
-  // Remove the # if present
   let cleanHex = hex.replace(/^#/, '');
-  
-  // Handle shorthand hex (e.g., #FFF)
+
   if (cleanHex.length === 3) {
-    cleanHex = cleanHex.split('').map(char => char + char).join('');
+    cleanHex = cleanHex
+      .split('')
+      .map((char) => char + char)
+      .join('');
   }
-  
-  // Ensure it's 6 characters
-  if (cleanHex.length !== 6) {
-    throw new Error('Invalid hex color format');
-  }
-  
-  // Parse the hex values
+
   const r = parseInt(cleanHex.substring(0, 2), 16);
   const g = parseInt(cleanHex.substring(2, 4), 16);
   const b = parseInt(cleanHex.substring(4, 6), 16);
-  
+
   return { r, g, b };
-}
+};
 
 export const hsvToRgb = ({ h, s, v }: HsvColor): RgbColor => {
   let r: number;
@@ -78,9 +72,13 @@ export const hsvToRgb = ({ h, s, v }: HsvColor): RgbColor => {
     g: Math.round(g * 255),
     b: Math.round(b * 255),
   };
-}
+};
 
-export const rgbToHsv = (rChannel: number, gChannel: number, bChannel: number): HsvColor => {
+export const rgbToHsv = (
+  rChannel: number,
+  gChannel: number,
+  bChannel: number,
+): HsvColor => {
   const r = rChannel / 255;
   const g = gChannel / 255;
   const b = bChannel / 255;
@@ -118,4 +116,39 @@ export const rgbToHsv = (rChannel: number, gChannel: number, bChannel: number): 
   }
 
   return { h, s, v };
+};
+
+export const getOpacityFromHex = (hex: string): number => {
+  let cleanHex = hex.replace('#', '');
+
+  if (!/^[0-9A-Fa-f]+$/.test(cleanHex)) {
+    throw new Error('Invalid Hex');
+  }
+
+  let alpha: number = 1;
+
+  switch (cleanHex.length) {
+    case 3:
+      alpha = 1;
+      break;
+
+    case 4:
+      const alphaHex4 = cleanHex[3];
+      alpha = parseInt(alphaHex4 + alphaHex4, 16) / 255;
+      break;
+
+    case 6:
+      alpha = 1;
+      break;
+
+    case 8:
+      const alphaHex8 = cleanHex.substring(6, 8);
+      alpha = parseInt(alphaHex8, 16) / 255;
+      break;
+
+    default:
+      throw new Error('Invalid HEX-length');
+  }
+
+  return Math.round(alpha * 100) / 100;
 }

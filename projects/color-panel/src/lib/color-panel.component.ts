@@ -12,7 +12,7 @@ import {
 import { drag$ } from './utils/drag.observable';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgStyle } from '@angular/common';
-import { hexToRgb, hsvToRgb, RgbColor, rgbToHsv } from './utils/utils';
+import { getOpacityFromHex, hexToRgb, hsvToRgb, RgbColor, rgbToHsv } from './utils/utils';
 import { RgbStrPipe } from './rgb-string.pipe';
 
 @Component({
@@ -53,11 +53,11 @@ export class ColorPanelComponent {
   alphaPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaPanel');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
-  color = signal<string>('#5ed933');
+  color = signal<string>('#b6ff9d');
   hue = signal<number>(0);
   saturation = signal<number>(0);
   value = signal<number>(1);
-  alpha = signal<number>(0.5);
+  alpha = signal<number>(1);
 
   hueColorPanel = computed(() => {
     const { r, g, b } = hsvToRgb({ h: this.hue(), s: 1, v: 1 });
@@ -77,11 +77,13 @@ export class ColorPanelComponent {
     afterNextRender({
       read: () => {
         const initialColor = this.color();
+        const alpha = getOpacityFromHex(initialColor);
         const { r, g, b } = hexToRgb(initialColor);
         const { h, s, v } = rgbToHsv(r, g, b);
         this.hue.set(h);
         this.saturation.set(s);
         this.value.set(v);
+        this.alpha.set(alpha);
         const colorPanelEl = this.colorPanel().nativeElement;
         const colorPanelRect = colorPanelEl.getBoundingClientRect();
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
@@ -106,7 +108,7 @@ export class ColorPanelComponent {
         const huePanelEl = this.huePanel().nativeElement;
         const hueHandlerEl = this.hueHandler().nativeElement;
         const hueHandlerRect = hueHandlerEl.getBoundingClientRect();
-        const initialHuePanelX = this.hue() * huePanelEl.getBoundingClientRect().width / 360;
+        const initialHuePanelX = (this.hue() * huePanelEl.getBoundingClientRect().width) / 360;
 
         drag$(huePanelEl, hueHandlerRect, { left: initialHuePanelX, top: 0 })
           .pipe(
@@ -114,7 +116,7 @@ export class ColorPanelComponent {
           ) 
           .subscribe(({ left, containerRect: { width } }) => {
             hueHandlerEl.style.left = `${left}px`;
-            const hue = left / width * 360;
+            const hue = (left + hueHandlerRect.width) / width * 360;
 
             this.hue.set(hue);
           });
@@ -130,7 +132,7 @@ export class ColorPanelComponent {
           )
           .subscribe(({ left, containerRect: { width } }) => {
             alphaHandlerEl.style.left = `${left}px`;
-            this.alpha.set(left / width);
+            this.alpha.set((left + alphaHandlerRect.width) / width);
           });
       },
     });

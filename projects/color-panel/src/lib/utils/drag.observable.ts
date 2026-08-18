@@ -14,7 +14,7 @@ export const drag$ = (
   handlerRect: DOMRect,
   initials?: { top: number; left: number },
 ) => {
-  const containerRect = dragContainer.getBoundingClientRect();
+  let containerRect = dragContainer.getBoundingClientRect();
   const initials$ = of({
     top: initials?.top || 0,
     left: initials?.left || 0,
@@ -31,7 +31,7 @@ export const drag$ = (
     ),
     fromEvent<MouseEvent>(dragContainer, 'mousedown').pipe(
       switchMap((mouseDownEvent) => {
-        let containerRect = dragContainer.getBoundingClientRect();
+        containerRect = dragContainer.getBoundingClientRect();
 
         mouseDownEvent.preventDefault();
         mouseDownEvent.stopPropagation();
