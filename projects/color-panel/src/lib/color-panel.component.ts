@@ -12,7 +12,7 @@ import {
 import { drag$ } from './helpers/drag.observable';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgStyle } from '@angular/common';
-import { getOpacityFromHex, hexToRgb, hsvToRgb, RgbColor, rgbToHsv } from './helpers/utils';
+import { hexaToRgba, hsvToRgb, RgbColor, rgbToHsv } from './helpers/utils';
 import { RgbStrPipe } from './rgb-string.pipe';
 
 @Component({
@@ -53,7 +53,7 @@ export class ColorPanelComponent {
   alphaPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaPanel');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
-  color = signal<string>('#4f64ec');
+  color = signal<string>('#b5ec4f59');
   hue = signal<number>(0);
   saturation = signal<number>(0);
   value = signal<number>(1);
@@ -77,15 +77,14 @@ export class ColorPanelComponent {
     afterNextRender({
       read: () => {
         const initialColor = this.color();
-        const alpha = getOpacityFromHex(initialColor);
-        const { r, g, b } = hexToRgb(initialColor);
+        const { r, g, b, a } = hexaToRgba(initialColor);
         const { h, s, v } = rgbToHsv(r, g, b);
         console.log(r, g,b)
         console.log(h, s,v)
         this.hue.set(h);
         this.saturation.set(s);
         this.value.set(v);
-        this.alpha.set(alpha);
+        this.alpha.set(a);
         const colorPanelEl = this.colorPanel().nativeElement;
         const colorPanelRect = colorPanelEl.getBoundingClientRect();
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
