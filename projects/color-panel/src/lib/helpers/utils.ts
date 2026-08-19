@@ -18,36 +18,38 @@ interface RGBA {
 }
 
 export const hexaToRgba = (hex: string): RGBA => {
-  // Remove # if present
   let cleanHex = hex.replace('#', '');
-  
-  // Handle shorthand hex (3 or 4 characters)
+
   if (cleanHex.length === 3) {
-    cleanHex = cleanHex.split('').map(c => c + c).join('');
+    cleanHex = cleanHex
+      .split('')
+      .map((c) => c + c)
+      .join('');
   } else if (cleanHex.length === 4) {
-    cleanHex = cleanHex.split('').map(c => c + c).join('');
+    cleanHex = cleanHex
+      .split('')
+      .map((c) => c + c)
+      .join('');
   }
-  
-  // Validate length
+
   if (cleanHex.length !== 6 && cleanHex.length !== 8) {
-    throw new Error('Invalid hex color format. Expected 3, 4, 6, or 8 characters (with or without #)');
+    throw new Error(
+      'Invalid hex color format. Expected 3, 4, 6, or 8 characters (with or without #)',
+    );
   }
-  
-  // Parse RGB and Alpha
+
   const r = parseInt(cleanHex.substring(0, 2), 16);
   const g = parseInt(cleanHex.substring(2, 4), 16);
   const b = parseInt(cleanHex.substring(4, 6), 16);
-  const a = cleanHex.length === 8 
-    ? parseInt(cleanHex.substring(6, 8), 16) / 255 
-    : 1; // Default alpha to 1 if not provided
-  
-  // Validate values
+  const a =
+    cleanHex.length === 8 ? parseInt(cleanHex.substring(6, 8), 16) / 255 : 1; // Default alpha to 1 if not provided
+
   if (isNaN(r) || isNaN(g) || isNaN(b) || isNaN(a)) {
     throw new Error('Invalid hex color format. Contains non-hex characters');
   }
-  
+
   return { r, g, b, a };
-}
+};
 
 export const hsvToRgb = ({ h, s, v }: HsvColor): RgbColor => {
   let r: number;
