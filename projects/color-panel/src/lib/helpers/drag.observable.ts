@@ -12,12 +12,12 @@ import {
 export const drag$ = (
   dragContainer: HTMLElement,
   handlerRect: DOMRect,
-  initials?: { top: number; left: number },
+  initials?: { topCoef: number; leftCoef: number },
 ) => {
   let containerRect = dragContainer.getBoundingClientRect();
   const initials$ = of({
-    top: initials?.top || 0,
-    left: initials?.left || 0,
+    top: (initials?.topCoef || 0) * containerRect.height,
+    left: (initials?.leftCoef || 0) * containerRect.width,
     containerRect,
   });
 

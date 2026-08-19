@@ -156,15 +156,12 @@ export class ColorPanelComponent {
         this.value.set(v);
         this.alpha.set(a);
         const colorPanelEl = this.colorPanel().nativeElement;
-        const colorPanelRect = colorPanelEl.getBoundingClientRect();
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
         const colorPanelHandlerRect = colorHandlerEl.getBoundingClientRect();
-        const initialPanelX = this.saturation() * colorPanelRect.width;
-        const initialPanelY = (1 - this.value()) * colorPanelRect.height;
 
         drag$(colorPanelEl, colorPanelHandlerRect, {
-          top: initialPanelY,
-          left: initialPanelX,
+          topCoef: (1 - this.value()),
+          leftCoef: this.saturation(),
         })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ top, left, containerRect: { width, height } }) => {
@@ -180,9 +177,8 @@ export class ColorPanelComponent {
         const huePanelEl = this.huePanel().nativeElement;
         const hueHandlerEl = this.hueHandler().nativeElement;
         const hueHandlerRect = hueHandlerEl.getBoundingClientRect();
-        const initialHuePanelX = (this.hue() * huePanelEl.getBoundingClientRect().width) / 360;
 
-        drag$(huePanelEl, hueHandlerRect, { left: initialHuePanelX, top: 0 })
+        drag$(huePanelEl, hueHandlerRect, { leftCoef: this.hue() / 360, topCoef: 0 })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ left, containerRect: { width } }) => {
             hueHandlerEl.style.left = `${left}px`;
@@ -194,9 +190,8 @@ export class ColorPanelComponent {
         const alphaPanelEl = this.alphaPanel().nativeElement;
         const alphaHandlerEl = this.alphaHandler().nativeElement;
         const alphaHandlerRect = alphaHandlerEl.getBoundingClientRect();
-        const initialAlphaX = alphaPanelEl.getBoundingClientRect().width * this.alpha();
 
-        drag$(alphaPanelEl, alphaHandlerRect, { top: 0, left: initialAlphaX })
+        drag$(alphaPanelEl, alphaHandlerRect, { topCoef: 0, leftCoef: this.alpha() })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ left, containerRect: { width } }) => {
             alphaHandlerEl.style.left = `${left}px`;
