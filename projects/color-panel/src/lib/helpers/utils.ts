@@ -17,6 +17,18 @@ interface RGBA {
   a: number; // Alpha: 0-1
 }
 
+interface HSV {
+  h: number; // 0-360
+  s: number; // 0-1
+  v: number; // 0-1
+}
+
+interface HSL {
+  h: number; // 0-360
+  s: number; // 0-100
+  l: number; // 0-100
+}
+
 export const hexaToRgba = (hex: string): RGBA => {
   let cleanHex = hex.replace('#', '');
 
@@ -51,7 +63,7 @@ export const hexaToRgba = (hex: string): RGBA => {
   return { r, g, b, a };
 };
 
-export const hsvToRgb = ({ h, s, v }: HsvColor): RgbColor => {
+export const hsvToHex = ({ h, s, v }: HsvColor, a = 1): string => {
   let r: number;
   let g: number;
   let b: number;
@@ -83,11 +95,12 @@ export const hsvToRgb = ({ h, s, v }: HsvColor): RgbColor => {
       [r, g, b] = [v, darkestColor, descColor];
   }
 
-  return {
-    r: Math.round(r * 255),
-    g: Math.round(g * 255),
-    b: Math.round(b * 255),
+  const toHex = (n: number): string => {
+    const hex = Math.round(n * 255).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
   };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(a)}`;
 };
 
 export const rgbToHsv = (
@@ -133,3 +146,36 @@ export const rgbToHsv = (
 
   return { h, s, v };
 };
+
+export const hsvToHsl = ({ h, s, v }: HSV): HSL => {
+  const l = v * (1 - s / 2);
+
+  let sResult: number;
+  if (l === 0 || l === 1) {
+    sResult = 0;
+  } else {
+    sResult = (v - l) / Math.min(l, 1 - l);
+  }
+
+  return {
+    h: h,
+    s: Math.round(sResult * 100),
+    l: Math.round(l * 100)
+  };
+}
+
+export const hslToHsv = ({ h, s, l }: HSL): HSV => {
+  // Convert percentages to decimals
+  const sDecimal = s / 100;
+  const lDecimal = l / 100;
+
+  // Calculate HSV values
+  const v = lDecimal + sDecimal * Math.min(lDecimal, 1 - lDecimal);
+  const saturation = v === 0 ? 0 : 2 * (1 - lDecimal / v);
+
+  return {
+    h: h,
+    s: Math.round(saturation * 100) / 100,
+    v: Math.round(v * 100) / 100
+  };
+}

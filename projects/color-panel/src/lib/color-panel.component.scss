@@ -5,9 +5,6 @@
 }
 
 :host {
-  --width: 300px;
-  --height: 300px;
-
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -50,12 +47,6 @@
 .settings {
   display: flex;
   gap: 8px;
-}
-
-.preview {
-  height: 30px;
-  flex-basis: 20%;
-  background: linear-gradient(to bottom, var(--input-color) 50%, var(--output-color) 50%);
 }
 
 .controls {
@@ -163,29 +154,6 @@
   &:nth-child(2) {
     grid-area: 2 / 1 / 3 / 2;
   }
-
-  & .clipboard {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-
-    .box {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background-color: transparent;
-      border-radius: 2px;
-      border: 1px solid rgb(23, 30, 31);
-      cursor: pointer;
-    }
-
-    & .box1 {
-      top: 8px;
-      left: 4px;
-      background-color: #000;
-    }
-  }
 }
 
 .alpha {
@@ -199,17 +167,22 @@
 .preview {
   position: relative;
   overflow: hidden;
+  height: 30px;
+  flex-basis: 20%;
+  background: linear-gradient(to bottom, var(--input-color) 50%, var(--output-color) 50%);
 
   &:hover {
     & .clipboard {
       position: absolute;
       width: 100%;
-      height: 100%;
+      height: 50%;
+      margin-top: auto;
       animation-duration: 500ms;
       animation-name: fadein;
       display: flex;
       align-items: center;
       justify-content: center;
+      bottom: 0;
 
       .box {
         position: absolute;
@@ -222,12 +195,12 @@
       }
 
       & .box1 {
-        left: 47%;
+        left: 48%;
         background-color: #000;
       }
 
       & .box2 {
-        bottom: 42%;
+        bottom: 30%;
       }
     }
   }

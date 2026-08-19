@@ -15,20 +15,22 @@ import {
 import { drag$ } from './helpers/drag.observable';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgStyle } from '@angular/common';
-import { hexaToRgba, hsvToRgb, RgbColor, rgbToHsv } from './helpers/utils';
-import { RgbStrPipe } from './rgb-string.pipe';
+import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { distinctUntilChanged, throttleTime } from 'rxjs';
 
 @Component({
   selector: 'lib-color-panel',
-  imports: [NgStyle, RgbStrPipe],
+  imports: [NgStyle, ReactiveFormsModule],
   template: `
-    @let outputRgba = rgba() | rgbStr;
+    @let hexaColor = hexa();
+    @let hueColorValue = hueColor();
 
     <div
       class="color-panel"
       #colorPanel
       [ngStyle]="{
-        'background-color': hueColorPanel(),
+        'background-color': hueColorValue,
       }"
     >
       <div class="handler" #colorHandler></div>
@@ -38,8 +40,8 @@ import { RgbStrPipe } from './rgb-string.pipe';
     <div class="settings">
       <div class="preview" [ngStyle]="{
         '--input-color': inputColor(),
-        '--output-color': outputRgba,
-      }" (click)="copyToClipboard(outputRgba)">
+        '--output-color': hexaColor,
+      }" (click)="copyToClipboard(hexaColor)">
         <div class="clipboard">
           <div class="box box1"></div>
           <div class="box box2"></div>
@@ -53,7 +55,7 @@ import { RgbStrPipe } from './rgb-string.pipe';
           class="alpha-panel"
           #alphaPanel
           [ngStyle]="{
-            '--hueColor': hueColorPanel(),
+            '--hueColor': hueColorValue,
           }"
         >
           <div class="alpha-placeholder"></div>
@@ -62,48 +64,50 @@ import { RgbStrPipe } from './rgb-string.pipe';
       </div>
     </div>
     <label class="hex" for="hex">
-      # <input type="text" id="hex">
+      hex: <input type="text" id="hex" [formControl]="hexControl">
     </label>
     <div class="channels">
       <div class="group">
-        <div class="clipboard">
-          <div class="box box1"></div>
-          <div class="box box2"></div>
-        </div>
-        <label for="r">
-          r
-          <input type="number" id="r"  min="0"/>
-        </label>
-        <label for="g">
-          g
-          <input type="number" id="g"  min="0"/>
-        </label>
-        <label for="b">
-          b
-          <input type="number" id="b"  min="0"/>
-        </label>
+        <ng-container [formGroup]="rgbForm">
+          <label for="r">
+            r
+            <input type="number" id="r"  min="0" step="1" formControlName="r"/>
+          </label>
+          <label for="g">
+            g
+            <input type="number" id="g"  min="0" step="1" formControlName="g"/>
+          </label>
+          <label for="b">
+            b
+            <input type="number" id="b"  min="0" step="1" formControlName="b"/>
+          </label>
+        </ng-container>
       </div>
       <div class="group">
-        <div class="clipboard">
-          <div class="box box1"></div>
-          <div class="box box2"></div>
-        </div>
-        <label for="h">
-          h
-          <input type="number" id="h"  min="0"/>
-        </label>
-        <label for="s">
-          s
-          <input type="number" id="s"  min="0"/>
-        </label>
-        <label for="l">
-          l
-          <input type="number" id="l"  min="0"/>
-        </label>
+        <ng-container [formGroup]="hslForm">
+          <label for="h">
+            h
+            <input type="number" id="h"  min="0" step="1" max="360" formControlName="h"/>
+          </label>
+          <label for="s">
+            s
+            <input type="number" id="s"  min="0" step="1" max="100" formControlName="s"/>
+          </label>
+          <label for="l">
+            l
+            <input type="number" id="l"  min="0" step="1" max="100" formControlName="l"/>
+          </label>
+        </ng-container>
       </div>
       <label class="alpha" for="alpha">
         a
-        <input type="number" id="alpha" min="0" max="1" step="0.1">
+        <input
+          [formControl]="alphaControl"
+          type="number"
+          id="alpha"
+          min="0"
+          max="1"
+          step="0.01">
       </label>
     </div>
   `,
@@ -126,21 +130,49 @@ export class ColorPanelComponent {
   saturation = signal<number>(0);
   value = signal<number>(1);
   alpha = signal<number>(1);
+  private readonly fb = inject(FormBuilder);
 
-  hueColorPanel = computed(() => {
-    const { r, g, b } = hsvToRgb({ h: this.hue(), s: 1, v: 1 });
-
-    return `rgb(${r}, ${g}, ${b})`;
+  hexControl = this.fb.nonNullable.control('#000000');
+  rgbForm = this.fb.nonNullable.group({
+    r: this.fb.nonNullable.control(0),
+    g: this.fb.nonNullable.control(0),
+    b: this.fb.nonNullable.control(0),
+  });
+  alphaControl = this.fb.nonNullable.control(0);
+  hslForm = this.fb.nonNullable.group({
+    h: this.fb.nonNullable.control(0),
+    s: this.fb.nonNullable.control(0),
+    l: this.fb.nonNullable.control(0),
   });
 
-  rgba = computed<RgbColor & { a: number }>(() => {
-    const { r, g, b } = hsvToRgb({
-      h: this.hue(),
+  hueColor = computed(() => {
+    const hex = hsvToHex({ h: this.hue(), s: 1, v: 1 });
+
+    return `${hex}`;
+  });
+
+  hexa = computed(() => {
+    const alpha = this.alpha();
+    const hue = this.hue();
+    const saturation = this.saturation();
+    const value = this.value();
+    const hex = hsvToHex({
+      h: hue,
       s: this.saturation(),
       v: this.value(),
-    });
+    }, alpha);
 
-    return { r, g, b, a: this.alpha() };
+    const { h, s, l } = hsvToHsl({ h: hue, s: saturation, v: value });
+
+    this.hslForm.setValue({ h, s, l }, { emitEvent: false });
+
+    this.hexControl.setValue(hex, { emitEvent: false });
+    this.alphaControl.setValue(alpha, { emitEvent: false });
+
+    const { r, g, b } = hexaToRgba(hex);
+    this.rgbForm.setValue({ r, g, b }, { emitEvent: false });
+
+    return `${hex}`;
   });
 
   private readonly destroyRef = inject(DestroyRef);
@@ -151,22 +183,19 @@ export class ColorPanelComponent {
         const initialColor = this.inputColor();
         const { r, g, b, a } = hexaToRgba(initialColor);
         const { h, s, v } = rgbToHsv(r, g, b);
-        this.hue.set(h);
-        this.saturation.set(s);
-        this.value.set(v);
-        this.alpha.set(a);
         const colorPanelEl = this.colorPanel().nativeElement;
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
         const colorPanelHandlerRect = colorHandlerEl.getBoundingClientRect();
+        let colorPanelHeight = 0;
+        let colorPanelWidth = 0;
 
-        drag$(colorPanelEl, colorPanelHandlerRect, {
-          topCoef: (1 - this.value()),
-          leftCoef: this.saturation(),
-        })
+        drag$(colorPanelEl, colorPanelHandlerRect, { topCoef: (1 - v),leftCoef: s })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ top, left, containerRect: { width, height } }) => {
             colorHandlerEl.style.top = `${top}px`;
             colorHandlerEl.style.left = `${left}px`;
+            colorPanelHeight = height;
+            colorPanelWidth = width;
 
             const s = left / width;
             const v = 1 - top / height;
@@ -177,12 +206,14 @@ export class ColorPanelComponent {
         const huePanelEl = this.huePanel().nativeElement;
         const hueHandlerEl = this.hueHandler().nativeElement;
         const hueHandlerRect = hueHandlerEl.getBoundingClientRect();
+        let huePanelWidth = 0;
 
-        drag$(huePanelEl, hueHandlerRect, { leftCoef: this.hue() / 360, topCoef: 0 })
+        drag$(huePanelEl, hueHandlerRect, { leftCoef: h / 360, topCoef: 0 })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ left, containerRect: { width } }) => {
             hueHandlerEl.style.left = `${left}px`;
-            const hue = (left / width) * 360;
+            huePanelWidth = width;
+            const hue = Math.ceil((left / width) * 360);
 
             this.hue.set(hue);
           });
@@ -190,13 +221,90 @@ export class ColorPanelComponent {
         const alphaPanelEl = this.alphaPanel().nativeElement;
         const alphaHandlerEl = this.alphaHandler().nativeElement;
         const alphaHandlerRect = alphaHandlerEl.getBoundingClientRect();
+        let alphaPanelWidth = 0;
 
-        drag$(alphaPanelEl, alphaHandlerRect, { topCoef: 0, leftCoef: this.alpha() })
+        drag$(alphaPanelEl, alphaHandlerRect, { topCoef: 0, leftCoef: a })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ left, containerRect: { width } }) => {
             alphaHandlerEl.style.left = `${left}px`;
-            this.alpha.set((left + alphaHandlerRect.width) / width);
+            this.alpha.set(+((left + alphaHandlerRect.width) / width).toFixed(2));
+            alphaPanelWidth = width;
           });
+
+        this.alphaControl.valueChanges.pipe(
+          throttleTime(16),
+          distinctUntilChanged(),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe((data) => {
+          this.alpha.set(data);
+          alphaHandlerEl.style.left = `${(data * alphaPanelWidth) - alphaHandlerRect.width}px`;
+        });
+
+        this.rgbForm.valueChanges.pipe(
+          throttleTime(16),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(({ r = 0, g = 0, b = 0 }) => {
+          const { h, s, v } = rgbToHsv(r, g, b);
+
+          this.hue.set(h);
+          this.saturation.set(s);
+          this.value.set(v);
+
+          const top = (1 - v) * colorPanelHeight;
+          const left = s * colorPanelWidth;
+
+          colorHandlerEl.style.top = `${top}px`;
+          colorHandlerEl.style.left = `${left}px`;
+
+          const leftHue = (huePanelWidth * h) / 360;
+          hueHandlerEl.style.left = `${leftHue}px`;
+        });
+
+        this.hexControl.valueChanges.pipe(
+          throttleTime(16),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(hexa => {
+          const { r, g, b, a } = hexaToRgba(hexa);
+
+          const { h, s, v } = rgbToHsv(r, g, b);
+
+          this.hue.set(h);
+          this.saturation.set(s);
+          this.value.set(v);
+
+          const top = (1 - v) * colorPanelHeight;
+          const left = s * colorPanelWidth;
+
+          colorHandlerEl.style.top = `${top}px`;
+          colorHandlerEl.style.left = `${left}px`;
+
+          const leftHue = (huePanelWidth * h) / 360;
+          hueHandlerEl.style.left = `${leftHue}px`;
+
+          this.alpha.set(+a.toFixed(2));
+          alphaHandlerEl.style.left = `${(a * alphaPanelWidth) - alphaHandlerRect.width}px`;
+
+        });
+
+        this.hslForm.valueChanges.pipe(
+          throttleTime(16),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(({ h: hChannel = 0, s: sChannel = 0, l = 0 }) => {
+          const { h, s, v } = hslToHsv({ h: hChannel, s: sChannel, l });
+
+          this.hue.set(h);
+          this.saturation.set(s);
+          this.value.set(v);
+
+          const top = (1 - v) * colorPanelHeight;
+          const left = s * colorPanelWidth;
+
+          colorHandlerEl.style.top = `${top}px`;
+          colorHandlerEl.style.left = `${left}px`;
+
+          const leftHue = (huePanelWidth * h) / 360;
+          hueHandlerEl.style.left = `${leftHue}px`;
+        });
       },
     });
   }
