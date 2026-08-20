@@ -30,77 +30,52 @@ interface HSL {
 }
 
 export const hexaToRgba = (hex: string): RGBA => {
-  let cleanHex = hex.replace('#', '');
+  const cleanHex = hex.replace("#", "");
 
-  if (cleanHex.length === 3) {
-    cleanHex = cleanHex
-      .split('')
-      .map((c) => c + c)
-      .join('');
-  } else if (cleanHex.length === 4) {
-    cleanHex = cleanHex
-      .split('')
-      .map((c) => c + c)
-      .join('');
+  if (![6, 8].includes(cleanHex.length)) {
+    throw new Error("Invalid HEX color");
   }
 
-  if (cleanHex.length !== 6 && cleanHex.length !== 8) {
-    throw new Error(
-      'Invalid hex color format. Expected 3, 4, 6, or 8 characters (with or without #)',
-    );
-  }
-
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  const a =
-    cleanHex.length === 8 ? parseInt(cleanHex.substring(6, 8), 16) / 255 : 1; // Default alpha to 1 if not provided
-
-  if (isNaN(r) || isNaN(g) || isNaN(b) || isNaN(a)) {
-    throw new Error('Invalid hex color format. Contains non-hex characters');
-  }
+  const r = parseInt(cleanHex.slice(0, 2), 16);
+  const g = parseInt(cleanHex.slice(2, 4), 16);
+  const b = parseInt(cleanHex.slice(4, 6), 16);
+  const a = cleanHex.length === 8
+    ? parseInt(cleanHex.slice(6, 8), 16) / 255
+    : 1;
 
   return { r, g, b, a };
 };
 
 export const hsvToHex = ({ h, s, v }: HsvColor, a = 1): string => {
-  let r: number;
-  let g: number;
-  let b: number;
+  h = ((h % 360) + 360) % 360;
+  s = Math.max(0, Math.min(100, s));
+  v = Math.max(0, Math.min(100, v));
 
-  const sector = Math.floor(h / 60);
-  const fraction = h / 60 - sector;
-  const darkestColor = v * (1 - s);
-  const descColor = v * (1 - fraction * s);
-  const ascColor = v * (1 - (1 - fraction) * s);
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
 
-  switch (sector % 6) {
-    case 0:
-      [r, g, b] = [v, ascColor, darkestColor];
-      break;
-    case 1:
-      [r, g, b] = [descColor, v, darkestColor];
-      break;
-    case 2:
-      [r, g, b] = [darkestColor, v, ascColor];
-      break;
-    case 3:
-      [r, g, b] = [darkestColor, descColor, v];
-      break;
-    case 4:
-      [r, g, b] = [ascColor, darkestColor, v];
-      break;
+  let r = 0;
+  let g = 0;
+  let b = 0;
 
-    default:
-      [r, g, b] = [v, darkestColor, descColor];
-  }
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
 
-  const toHex = (n: number): string => {
-    const hex = Math.round(n * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  };
+  const toHex = (n: number) =>
+    Math.round((n + m) * 255)
+      .toString(16)
+      .padStart(2, "0");
 
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(a)}`;
+  const alpha = Math.round(Math.max(0, Math.min(1, a)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}${alpha}`;
 };
 
 export const rgbToHsv = (

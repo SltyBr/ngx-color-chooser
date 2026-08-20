@@ -182,6 +182,7 @@ export class ColorPanelComponent {
       read: () => {
         const initialColor = this.inputColor();
         const { r, g, b, a } = hexaToRgba(initialColor);
+        console.log(r, g, b, a)
         const { h, s, v } = rgbToHsv(r, g, b);
         const colorPanelEl = this.colorPanel().nativeElement;
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
@@ -189,16 +190,17 @@ export class ColorPanelComponent {
         let colorPanelHeight = 0;
         let colorPanelWidth = 0;
 
-        drag$(colorPanelEl, colorPanelHandlerRect, { topCoef: (1 - v),leftCoef: s })
+        drag$(colorPanelEl, { topCoef: (1 - v),leftCoef: s })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ top, left, containerRect: { width, height } }) => {
-            colorHandlerEl.style.top = `${top}px`;
-            colorHandlerEl.style.left = `${left}px`;
+            colorHandlerEl.style.top = `${top - colorPanelHandlerRect.height / 2}px`;
+            colorHandlerEl.style.left = `${left - colorPanelHandlerRect.width / 2}px`;
             colorPanelHeight = height;
             colorPanelWidth = width;
 
             const s = left / width;
             const v = 1 - top / height;
+
             this.saturation.set(s);
             this.value.set(v);
           });
@@ -208,12 +210,12 @@ export class ColorPanelComponent {
         const hueHandlerRect = hueHandlerEl.getBoundingClientRect();
         let huePanelWidth = 0;
 
-        drag$(huePanelEl, hueHandlerRect, { leftCoef: h / 360, topCoef: 0 })
+        drag$(huePanelEl, { leftCoef: h / 360, topCoef: 0 })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ left, containerRect: { width } }) => {
-            hueHandlerEl.style.left = `${left}px`;
+            hueHandlerEl.style.left = `${left - hueHandlerRect.width / 2}px`;
             huePanelWidth = width;
-            const hue = Math.ceil((left / width) * 360);
+            const hue = (left / width) * 360;
 
             this.hue.set(hue);
           });
@@ -223,11 +225,11 @@ export class ColorPanelComponent {
         const alphaHandlerRect = alphaHandlerEl.getBoundingClientRect();
         let alphaPanelWidth = 0;
 
-        drag$(alphaPanelEl, alphaHandlerRect, { topCoef: 0, leftCoef: a })
+        drag$(alphaPanelEl, { topCoef: 0, leftCoef: a })
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ left, containerRect: { width } }) => {
-            alphaHandlerEl.style.left = `${left}px`;
-            this.alpha.set(+((left + alphaHandlerRect.width) / width).toFixed(2));
+            alphaHandlerEl.style.left = `${left - alphaHandlerRect.width / 2}px`;
+            this.alpha.set(left / width);
             alphaPanelWidth = width;
           });
 

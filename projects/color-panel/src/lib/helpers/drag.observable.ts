@@ -11,7 +11,6 @@ import {
 
 export const drag$ = (
   dragContainer: HTMLElement,
-  handlerRect: DOMRect,
   initials?: { topCoef: number; leftCoef: number },
 ) => {
   let containerRect = dragContainer.getBoundingClientRect();
@@ -24,8 +23,8 @@ export const drag$ = (
   return merge(
     initials$.pipe(
       map((data) => ({
-        left: Math.min(data.left, containerRect.width - handlerRect.width),
-        top: Math.min(data.top, containerRect.height - handlerRect.height),
+        left: Math.min(data.left, containerRect.width),
+        top: Math.min(data.top, containerRect.height),
         containerRect,
       })),
     ),
@@ -38,23 +37,25 @@ export const drag$ = (
 
         return fromEvent<MouseEvent>(document, 'mousemove').pipe(
           startWith(mouseDownEvent),
-          map((event) => ({
-            left: Math.max(
-              0,
-              Math.min(
-                containerRect.width - handlerRect.width,
-                event.clientX - containerRect.left - handlerRect.width / 2,
+          map((event) => {
+            return {
+              left: Math.max(
+                0,
+                Math.min(
+                  containerRect.width,
+                  event.clientX - containerRect.left,
+                ),
               ),
-            ),
-            top: Math.max(
-              0,
-              Math.min(
-                containerRect.height - handlerRect.height,
-                event.clientY - containerRect.top - handlerRect.height / 2,
+              top: Math.max(
+                0,
+                Math.min(
+                  containerRect.height,
+                  event.clientY - containerRect.top,
+                ),
               ),
-            ),
-            containerRect,
-          })),
+              containerRect,
+            }
+          }),
           distinctUntilChanged(
             (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr),
           ),
