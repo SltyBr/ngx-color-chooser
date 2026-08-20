@@ -182,7 +182,6 @@ export class ColorPanelComponent {
       read: () => {
         const initialColor = this.inputColor();
         const { r, g, b, a } = hexaToRgba(initialColor);
-        console.log(r, g, b, a)
         const { h, s, v } = rgbToHsv(r, g, b);
         const colorPanelEl = this.colorPanel().nativeElement;
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
@@ -239,7 +238,7 @@ export class ColorPanelComponent {
           takeUntilDestroyed(this.destroyRef)
         ).subscribe((data) => {
           this.alpha.set(data);
-          alphaHandlerEl.style.left = `${(data * alphaPanelWidth) - alphaHandlerRect.width}px`;
+          alphaHandlerEl.style.left = `${(data * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
         });
 
         this.rgbForm.valueChanges.pipe(
@@ -259,7 +258,7 @@ export class ColorPanelComponent {
           colorHandlerEl.style.left = `${left}px`;
 
           const leftHue = (huePanelWidth * h) / 360;
-          hueHandlerEl.style.left = `${leftHue}px`;
+          hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
         });
 
         this.hexControl.valueChanges.pipe(
@@ -277,15 +276,14 @@ export class ColorPanelComponent {
           const top = (1 - v) * colorPanelHeight;
           const left = s * colorPanelWidth;
 
-          colorHandlerEl.style.top = `${top}px`;
-          colorHandlerEl.style.left = `${left}px`;
+          colorHandlerEl.style.top = `${top - colorPanelHandlerRect.height / 2}px`;
+          colorHandlerEl.style.left = `${left - colorPanelHandlerRect.width / 2}px`;
 
           const leftHue = (huePanelWidth * h) / 360;
-          hueHandlerEl.style.left = `${leftHue}px`;
+          hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
 
-          this.alpha.set(+a.toFixed(2));
-          alphaHandlerEl.style.left = `${(a * alphaPanelWidth) - alphaHandlerRect.width}px`;
-
+          this.alpha.set(a);
+          alphaHandlerEl.style.left = `${(a * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
         });
 
         this.hslForm.valueChanges.pipe(
@@ -301,11 +299,11 @@ export class ColorPanelComponent {
           const top = (1 - v) * colorPanelHeight;
           const left = s * colorPanelWidth;
 
-          colorHandlerEl.style.top = `${top}px`;
-          colorHandlerEl.style.left = `${left}px`;
+          colorHandlerEl.style.top = `${top - colorPanelHandlerRect.height / 2}px`;
+          colorHandlerEl.style.left = `${left - colorPanelHandlerRect.width / 2}px`;
 
           const leftHue = (huePanelWidth * h) / 360;
-          hueHandlerEl.style.left = `${leftHue}px`;
+          hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
         });
       },
     });

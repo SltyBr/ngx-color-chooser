@@ -83,40 +83,37 @@ export const rgbToHsv = (
   gChannel: number,
   bChannel: number,
 ): HsvColor => {
+  // Normalize RGB values to 0-1 range
   const r = rChannel / 255;
   const g = gChannel / 255;
   const b = bChannel / 255;
 
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-
-  let h = max;
-  let s = max;
-  const v = max;
-
   const delta = max - min;
 
-  s = max === 0 ? 0 : delta / max;
+  let h = 0;
+  let s = 0;
+  const v = max;
 
-  if (max === min) {
-    h = 0;
-  } else {
-    switch (max) {
-      case r:
-        h = (g - b) / delta + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / delta + 2;
-        break;
-      case b:
-        h = (r - g) / delta + 4;
-        break;
+  // Calculate saturation
+  if (max !== 0) {
+    s = delta / max;
+  }
 
-      default:
-        break;
+  // Calculate hue
+  if (delta !== 0) {
+    if (max === r) {
+      h = ((g - b) / delta) % 6;
+    } else if (max === g) {
+      h = (b - r) / delta + 2;
+    } else {
+      h = (r - g) / delta + 4;
     }
-
-    h *= 60;
+    h = Math.round(h * 60);
+    if (h < 0) {
+      h += 360;
+    }
   }
 
   return { h, s, v };
