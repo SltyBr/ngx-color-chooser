@@ -142,7 +142,7 @@ export const hslToHsv = ({ h, s, l }: HSL): HSV => {
   const saturation = v === 0 ? 0 : 2 * (1 - lDecimal / v);
 
   return {
-    h: h,
+    h: Math.round(h),
     s: Math.round(saturation * 100) / 100,
     v: Math.round(v * 100) / 100
   };

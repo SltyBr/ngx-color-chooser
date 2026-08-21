@@ -218,7 +218,7 @@ export class ColorPanelComponent {
           .subscribe(({ left, containerRect: { width } }) => {
             hueHandlerEl.style.left = `${left - hueHandlerRect.width / 2}px`;
             huePanelWidth = width;
-            const hue = (left / width) * 360;
+            const hue = Math.round((left / width) * 360);
 
             this.hue.set(hue);
           });
