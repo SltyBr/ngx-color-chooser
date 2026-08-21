@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ColorPanelComponent } from 'color-panel';
+import { ColorChooserComponent } from 'color-chooser';
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, ColorPanelComponent],
+    imports: [RouterOutlet, ColorChooserComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'ngx-color-panel';
+  title = 'ngx-color-chooser';
 }

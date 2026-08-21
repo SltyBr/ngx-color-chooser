@@ -16,7 +16,7 @@
   }
 }
 
-.color-panel {
+.color-chooser {
   background-color: red;
   position: relative;
   cursor: crosshair;
@@ -56,7 +56,7 @@
   flex-grow: 1;
 }
 
-.hue-panel {
+.hue-chooser {
   width: 100%;
   height: 12px;
   background-repeat: no-repeat;
@@ -76,7 +76,7 @@
   cursor: pointer;
 }
 
-.alpha-panel {
+.alpha-chooser {
   width: 100%;
   height: 12px;
   background-image: linear-gradient(90deg, white 0, var(--hueColor, red));

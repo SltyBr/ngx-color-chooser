@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "ngx-color-panel": {
+    "ngx-color-chooser": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/ngx-color-panel",
+            "outputPath": "dist/ngx-color-chooser",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -64,10 +64,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "ngx-color-panel:build:production"
+              "buildTarget": "ngx-color-chooser:build:production"
             },
             "development": {
-              "buildTarget": "ngx-color-panel:build:development"
+              "buildTarget": "ngx-color-chooser:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -98,23 +98,23 @@
         }
       }
     },
-    "color-panel": {
+    "color-chooser": {
       "projectType": "library",
-      "root": "projects/color-panel",
-      "sourceRoot": "projects/color-panel/src",
+      "root": "projects/color-chooser",
+      "sourceRoot": "projects/color-chooser/src",
       "prefix": "lib",
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",
           "options": {
-            "project": "projects/color-panel/ng-package.json"
+            "project": "projects/color-chooser/ng-package.json"
           },
           "configurations": {
             "production": {
-              "tsConfig": "projects/color-panel/tsconfig.lib.prod.json"
+              "tsConfig": "projects/color-chooser/tsconfig.lib.prod.json"
             },
             "development": {
-              "tsConfig": "projects/color-panel/tsconfig.lib.json"
+              "tsConfig": "projects/color-chooser/tsconfig.lib.json"
             }
           },
           "defaultConfiguration": "production"
@@ -122,7 +122,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "tsConfig": "projects/color-panel/tsconfig.spec.json",
+            "tsConfig": "projects/color-chooser/tsconfig.spec.json",
             "polyfills": [
               "zone.js",
               "zone.js/testing"

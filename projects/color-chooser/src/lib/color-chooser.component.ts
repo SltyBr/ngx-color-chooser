@@ -23,14 +23,14 @@ import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/ut
 import { hexColorValidator } from './validators/hex.validator';
 
 @Component({
-  selector: 'lib-color-panel',
+  selector: 'lib-color-chooser',
   imports: [NgStyle, ReactiveFormsModule],
   template: `
     @let hexaColor = hexa();
     @let hueColorValue = hueColor();
 
     <div
-      class="color-panel"
+      class="color-chooser"
       #colorPanel
       [ngStyle]="{
         'background-color': hueColorValue,
@@ -51,11 +51,11 @@ import { hexColorValidator } from './validators/hex.validator';
         </div>
       </div>
       <div class="controls">
-        <div class="hue-panel" #huePanel>
+        <div class="hue-chooser" #huePanel>
           <div class="handler centered-vertical" #hueHandler></div>
         </div>
         <div
-          class="alpha-panel"
+          class="alpha-chooser"
           #alphaPanel
           [ngStyle]="{
             '--hueColor': hueColorValue,
@@ -114,10 +114,10 @@ import { hexColorValidator } from './validators/hex.validator';
       </label>
     </div>
   `,
-  styleUrls: ['color-panel.component.scss'],
+  styleUrls: ['color-chooser.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ColorPanelComponent {
+export class ColorChooserComponent {
   colorPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('colorPanel');
   colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
 

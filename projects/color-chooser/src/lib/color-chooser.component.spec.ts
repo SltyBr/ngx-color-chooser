@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ColorPanelComponent } from './color-panel.component';
+import { ColorPanelComponent } from './color-chooser.component';
 
 describe('ColorPanelComponent', () => {
   let component: ColorPanelComponent;

@@ -4,8 +4,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
-      "color-panel": [
-        "./dist/color-panel"
+      "color-chooser": [
+        "./dist/color-chooser"
       ]
     },
     "outDir": "./dist/out-tsc",

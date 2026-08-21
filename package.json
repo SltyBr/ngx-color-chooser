@@ -1,5 +1,5 @@
 {
-  "name": "ngx-color-panel",
+  "name": "ngx-color-chooser",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",

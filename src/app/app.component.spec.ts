@@ -14,16 +14,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'ngx-color-panel' title`, () => {
+  it(`should have the 'ngx-color-chooser' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('ngx-color-panel');
+    expect(app.title).toEqual('ngx-color-chooser');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, ngx-color-panel');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, ngx-color-chooser');
   });
 });
