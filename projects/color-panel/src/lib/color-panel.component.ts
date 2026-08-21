@@ -74,15 +74,15 @@ import { hexColorValidator } from './validators/hex.validator';
         <ng-container [formGroup]="rgbForm">
           <label for="r">
             r
-            <input type="number" id="r"  min="0" step="1" formControlName="r"/>
+            <input type="number" id="r"  min="0" max="255" step="1" formControlName="r"/>
           </label>
           <label for="g">
             g
-            <input type="number" id="g"  min="0" step="1" formControlName="g"/>
+            <input type="number" id="g"  min="0" max="255" step="1" formControlName="g"/>
           </label>
           <label for="b">
             b
-            <input type="number" id="b"  min="0" step="1" formControlName="b"/>
+            <input type="number" id="b"  min="0" max="255" step="1" formControlName="b"/>
           </label>
         </ng-container>
       </div>
