@@ -32,10 +32,6 @@ interface HSL {
 export const hexaToRgba = (hex: string): RGBA => {
   const cleanHex = hex.replace("#", "");
 
-  if (![6, 8].includes(cleanHex.length)) {
-    throw new Error("Invalid HEX color");
-  }
-
   const r = parseInt(cleanHex.slice(0, 2), 16);
   const g = parseInt(cleanHex.slice(2, 4), 16);
   const b = parseInt(cleanHex.slice(4, 6), 16);

@@ -1,6 +1,6 @@
 import {
   afterNextRender,
-  Component,
+  ChangeDetectionStrategy, Component,
   computed,
   DestroyRef,
   ElementRef,
@@ -10,14 +10,17 @@ import {
   output,
   signal,
   Signal,
-  viewChild,
+  viewChild
 } from '@angular/core';
-import { drag$ } from './helpers/drag.observable';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgStyle } from '@angular/common';
-import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+
 import { distinctUntilChanged, throttleTime } from 'rxjs';
+
+import { drag$ } from './helpers/drag.observable';
+import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
+import { hexColorValidator } from './validators/hex.validator';
 
 @Component({
   selector: 'lib-color-panel',
@@ -112,6 +115,7 @@ import { distinctUntilChanged, throttleTime } from 'rxjs';
     </div>
   `,
   styleUrls: ['color-panel.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorPanelComponent {
   colorPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('colorPanel');
@@ -132,7 +136,7 @@ export class ColorPanelComponent {
   alpha = signal<number>(1);
   private readonly fb = inject(FormBuilder);
 
-  hexControl = this.fb.nonNullable.control('#000000');
+  hexControl = this.fb.nonNullable.control('#000000', hexColorValidator());
   rgbForm = this.fb.nonNullable.group({
     r: this.fb.nonNullable.control(0),
     g: this.fb.nonNullable.control(0),
@@ -228,7 +232,7 @@ export class ColorPanelComponent {
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe(({ left, containerRect: { width } }) => {
             alphaHandlerEl.style.left = `${left - alphaHandlerRect.width / 2}px`;
-            this.alpha.set(left / width);
+            this.alpha.set(+(left / width).toFixed(2));
             alphaPanelWidth = width;
           });
 
@@ -237,7 +241,7 @@ export class ColorPanelComponent {
           distinctUntilChanged(),
           takeUntilDestroyed(this.destroyRef)
         ).subscribe((data) => {
-          this.alpha.set(data);
+          this.alpha.set(+(data).toFixed(2));
           alphaHandlerEl.style.left = `${(data * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
         });
 
@@ -282,7 +286,7 @@ export class ColorPanelComponent {
           const leftHue = (huePanelWidth * h) / 360;
           hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
 
-          this.alpha.set(a);
+          this.alpha.set(+a.toFixed(2));
           alphaHandlerEl.style.left = `${(a * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
         });
 
