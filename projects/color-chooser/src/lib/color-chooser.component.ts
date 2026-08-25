@@ -1,6 +1,6 @@
 import {
-  afterEveryRender,
   afterNextRender,
+  AfterViewInit,
   ChangeDetectionStrategy, Component,
   computed,
   DestroyRef,
@@ -186,11 +186,11 @@ export class ColorChooserComponent {
     const { h, s, l } = hsvToHsl({ h: hue, s: saturation, v: value });
     this.hslForm.setValue({ h, s, l }, { emitEvent: false });
 
-    this.hexControl.setValue(hex, { emitEvent: false });
-    this.alphaControl.setValue(alpha, { emitEvent: false });
-
     const { r, g, b } = hexaToRgba(hex);
     this.rgbForm.setValue({ r, g, b }, { emitEvent: false });
+
+    this.hexControl.setValue(hex, { emitEvent: false });
+    this.alphaControl.setValue(alpha, { emitEvent: false });
 
     return `${hex}`;
   });
@@ -200,6 +200,7 @@ export class ColorChooserComponent {
   constructor() {
     afterNextRender({
       read: () => {
+        let inited = false;
         const colorPanelEl = this.colorPanel().nativeElement;
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
         const colorPanelHandlerRect = colorHandlerEl.getBoundingClientRect();
@@ -220,6 +221,10 @@ export class ColorChooserComponent {
 
             this.saturation.set(s);
             this.value.set(v);
+
+            if (inited) {
+              this.colorChanged.emit(this.hexa());
+            }
           });
 
         const huePanelEl = this.huePanel().nativeElement;
@@ -236,6 +241,10 @@ export class ColorChooserComponent {
             const hue = Math.round((left / width) * 360);
 
             this.hue.set(hue);
+
+            if (inited) {
+              this.colorChanged.emit(this.hexa());
+            }
           });
 
         const alphaPanelEl = this.alphaPanel().nativeElement;
@@ -250,6 +259,10 @@ export class ColorChooserComponent {
             alphaHandlerEl.style.left = `${left - alphaHandlerRect.width / 2}px`;
             this.alpha.set(+(left / width).toFixed(2));
             alphaPanelWidth = width;
+
+            if (inited) {
+              this.colorChanged.emit(this.hexa());
+            }
           });
 
         this.alphaControl.valueChanges.pipe(
@@ -259,6 +272,10 @@ export class ColorChooserComponent {
         ).subscribe((data) => {
           this.alpha.set(+(data).toFixed(2));
           alphaHandlerEl.style.left = `${(data * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
+
+          if (inited) {
+            this.colorChanged.emit(this.hexa());
+          }
         });
 
         this.rgbForm.valueChanges.pipe(
@@ -279,6 +296,10 @@ export class ColorChooserComponent {
 
           const leftHue = (huePanelWidth * h) / 360;
           hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
+
+          if (inited) {
+            this.colorChanged.emit(this.hexa());
+          }
         });
 
         this.hexControl.valueChanges.pipe(
@@ -304,6 +325,10 @@ export class ColorChooserComponent {
 
           this.alpha.set(+a.toFixed(2));
           alphaHandlerEl.style.left = `${(a * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
+
+          if (inited) {
+            this.colorChanged.emit(this.hexa());
+          }
         });
 
         this.hslForm.valueChanges.pipe(
@@ -324,7 +349,13 @@ export class ColorChooserComponent {
 
           const leftHue = (huePanelWidth * h) / 360;
           hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
+
+          if (inited) {
+            this.colorChanged.emit(this.hexa());
+          }
         });
+
+        inited = true;
       },
     });
   }
