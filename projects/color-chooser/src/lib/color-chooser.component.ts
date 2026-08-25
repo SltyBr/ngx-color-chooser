@@ -1,4 +1,5 @@
 import {
+  afterEveryRender,
   afterNextRender,
   ChangeDetectionStrategy, Component,
   computed,
@@ -6,17 +7,16 @@ import {
   ElementRef,
   inject,
   input,
-  linkedSignal,
   output,
   signal,
   Signal,
   viewChild
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
-import { distinctUntilChanged, throttleTime } from 'rxjs';
+import { distinctUntilChanged, map, shareReplay, switchMap, throttleTime } from 'rxjs';
 
 import { drag$ } from './helpers/drag.observable';
 import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
@@ -113,6 +113,10 @@ import { hexColorValidator } from './validators/hex.validator';
           step="0.01">
       </label>
     </div>
+    <div class="actions">
+      <button (click)="onCancel.emit()">{{ cancelBtnText() }}</button>
+      <button (click)="onSubmit.emit(hexaColor)">{{ submitBtnText() }}</button>
+    </div>
   `,
   styleUrls: ['color-chooser.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -128,8 +132,21 @@ export class ColorChooserComponent {
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
   inputColor = input.required<string>();
-  outputColor = linkedSignal(() => this.inputColor());
-  output = output<string>();
+  submitBtnText = input<string>('Ok');
+  cancelBtnText = input<string>('Cancel');
+  inputColor$ = toObservable(this.inputColor).pipe(
+    map(color => {
+      const { r, g, b, a } = hexaToRgba(color);
+      const { h, s, v } = rgbToHsv(r, g, b);
+
+      return { h, s, v, a };
+    }),
+    shareReplay(),
+  );
+
+  colorChanged = output<string>();
+  onSubmit = output<string>();
+  onCancel = output<void>();
   hue = signal<number>(0);
   saturation = signal<number>(0);
   value = signal<number>(1);
@@ -162,12 +179,11 @@ export class ColorChooserComponent {
     const value = this.value();
     const hex = hsvToHex({
       h: hue,
-      s: this.saturation(),
-      v: this.value(),
+      s: saturation,
+      v: value,
     }, alpha);
 
     const { h, s, l } = hsvToHsl({ h: hue, s: saturation, v: value });
-
     this.hslForm.setValue({ h, s, l }, { emitEvent: false });
 
     this.hexControl.setValue(hex, { emitEvent: false });
@@ -184,18 +200,16 @@ export class ColorChooserComponent {
   constructor() {
     afterNextRender({
       read: () => {
-        const initialColor = this.inputColor();
-        const { r, g, b, a } = hexaToRgba(initialColor);
-        const { h, s, v } = rgbToHsv(r, g, b);
         const colorPanelEl = this.colorPanel().nativeElement;
         const colorHandlerEl = this.colorPanelHandler().nativeElement;
         const colorPanelHandlerRect = colorHandlerEl.getBoundingClientRect();
         let colorPanelHeight = 0;
         let colorPanelWidth = 0;
 
-        drag$(colorPanelEl, { topCoef: (1 - v),leftCoef: s })
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe(({ top, left, containerRect: { width, height } }) => {
+        this.inputColor$.pipe(
+          switchMap(({ v, s }) => drag$(colorPanelEl, { topCoef: (1 - v), leftCoef: s })),
+          takeUntilDestroyed(this.destroyRef),
+        ).subscribe(({ top, left, containerRect: { width, height } }) => {
             colorHandlerEl.style.top = `${top - colorPanelHandlerRect.height / 2}px`;
             colorHandlerEl.style.left = `${left - colorPanelHandlerRect.width / 2}px`;
             colorPanelHeight = height;
@@ -213,9 +227,10 @@ export class ColorChooserComponent {
         const hueHandlerRect = hueHandlerEl.getBoundingClientRect();
         let huePanelWidth = 0;
 
-        drag$(huePanelEl, { leftCoef: h / 360, topCoef: 0 })
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe(({ left, containerRect: { width } }) => {
+        this.inputColor$.pipe(
+          switchMap(({ h }) => drag$(huePanelEl, { leftCoef: h / 360, topCoef: 0 })),
+          takeUntilDestroyed(this.destroyRef),
+        ).subscribe(({ left, containerRect: { width } }) => {
             hueHandlerEl.style.left = `${left - hueHandlerRect.width / 2}px`;
             huePanelWidth = width;
             const hue = Math.round((left / width) * 360);
@@ -228,9 +243,10 @@ export class ColorChooserComponent {
         const alphaHandlerRect = alphaHandlerEl.getBoundingClientRect();
         let alphaPanelWidth = 0;
 
-        drag$(alphaPanelEl, { topCoef: 0, leftCoef: a })
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe(({ left, containerRect: { width } }) => {
+        this.inputColor$.pipe(
+          switchMap(({ a }) => drag$(alphaPanelEl, { topCoef: 0, leftCoef: a })),
+          takeUntilDestroyed(this.destroyRef),
+        ).subscribe(({ left, containerRect: { width } }) => {
             alphaHandlerEl.style.left = `${left - alphaHandlerRect.width / 2}px`;
             this.alpha.set(+(left / width).toFixed(2));
             alphaPanelWidth = width;
@@ -239,7 +255,7 @@ export class ColorChooserComponent {
         this.alphaControl.valueChanges.pipe(
           throttleTime(16),
           distinctUntilChanged(),
-          takeUntilDestroyed(this.destroyRef)
+          takeUntilDestroyed(this.destroyRef),
         ).subscribe((data) => {
           this.alpha.set(+(data).toFixed(2));
           alphaHandlerEl.style.left = `${(data * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
@@ -267,7 +283,7 @@ export class ColorChooserComponent {
 
         this.hexControl.valueChanges.pipe(
           throttleTime(16),
-          takeUntilDestroyed(this.destroyRef)
+          takeUntilDestroyed(this.destroyRef),
         ).subscribe(hexa => {
           const { r, g, b, a } = hexaToRgba(hexa);
 

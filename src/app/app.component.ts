@@ -10,4 +10,11 @@ import { ColorChooserComponent } from 'color-chooser';
 })
 export class AppComponent {
   title = 'ngx-color-chooser';
+  color = '#ff0000ff';
+
+  test(value: string): void {
+    console.log('onValueChanged ', value)
+  }
+
+  onSubmit(): void {}
 }

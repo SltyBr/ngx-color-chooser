@@ -1,3 +1,9 @@
 <div class="color-chooser-container">
-  <lib-color-chooser [inputColor]="'#ff0000'"></lib-color-chooser>
+  <lib-color-chooser
+    [inputColor]="color"
+    (onSubmit)="onSubmit()"
+    (colorChanged)="test($event)"
+  ></lib-color-chooser>
 </div>
+
+<input type="text" (input)="color = $event.target.value" [value]="color">
