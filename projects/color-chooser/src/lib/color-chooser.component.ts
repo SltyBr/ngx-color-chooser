@@ -1,5 +1,4 @@
 import {
-  afterEveryRender,
   afterNextRender,
   ChangeDetectionStrategy, Component,
   computed,
@@ -7,8 +6,8 @@ import {
   ElementRef,
   inject,
   input,
+  linkedSignal,
   output,
-  signal,
   Signal,
   viewChild
 } from '@angular/core';
@@ -16,7 +15,7 @@ import { NgStyle } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
-import { distinctUntilChanged, map, shareReplay, switchMap, throttleTime } from 'rxjs';
+import { distinctUntilChanged, map, shareReplay, skip, switchMap, throttleTime } from 'rxjs';
 
 import { drag$ } from './helpers/drag.observable';
 import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
@@ -147,10 +146,57 @@ export class ColorChooserComponent {
   colorChanged = output<string>();
   onSubmit = output<string>();
   onCancel = output<void>();
-  hue = signal<number>(0);
-  saturation = signal<number>(0);
-  value = signal<number>(1);
-  alpha = signal<number>(1);
+
+  hue = linkedSignal<string, number>({
+    source: this.inputColor,
+    computation: (value) => {
+      const { r, g, b } = hexaToRgba(value);
+      const { h } = rgbToHsv(r, g, b);
+
+      return h;
+    }
+  });
+
+  saturation = linkedSignal<string, number>({
+    source: this.inputColor,
+    computation: (value) => {
+      const { r, g, b } = hexaToRgba(value);
+      const { s } = rgbToHsv(r, g, b);
+
+      return s;
+    }
+  });
+
+  value = linkedSignal<string, number>({
+    source: this.inputColor,
+    computation: (value) => {
+      const { r, g, b } = hexaToRgba(value);
+      const { v } = rgbToHsv(r, g, b);
+
+      return v;
+    }
+  });
+
+  hsv = linkedSignal<string, { h: number, s: number; v: number }>({
+    source: this.inputColor,
+    computation: (value) => {
+      const { r, g, b } = hexaToRgba(value);
+      const { h, s, v } = rgbToHsv(r, g, b);
+
+      return { h, s, v };
+    }
+  }
+  )
+
+  alpha = linkedSignal<string, number>({
+    source: this.inputColor,
+    computation: (value) => {
+      const { a } = hexaToRgba(value);
+
+      return a;
+    }
+  });
+
   private readonly fb = inject(FormBuilder);
 
   hexControl = this.fb.nonNullable.control('#000000', hexColorValidator());
@@ -187,13 +233,14 @@ export class ColorChooserComponent {
     this.hslForm.setValue({ h, s, l }, { emitEvent: false });
 
     this.hexControl.setValue(hex, { emitEvent: false });
-    this.alphaControl.setValue(alpha, { emitEvent: false });
 
     const { r, g, b } = hexaToRgba(hex);
     this.rgbForm.setValue({ r, g, b }, { emitEvent: false });
 
-    return `${hex}`;
+    return hex;
   });
+  
+  hexa$ = toObservable(this.hexa);
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -247,10 +294,12 @@ export class ColorChooserComponent {
           switchMap(({ a }) => drag$(alphaPanelEl, { topCoef: 0, leftCoef: a })),
           takeUntilDestroyed(this.destroyRef),
         ).subscribe(({ left, containerRect: { width } }) => {
-            alphaHandlerEl.style.left = `${left - alphaHandlerRect.width / 2}px`;
-            this.alpha.set(+(left / width).toFixed(2));
-            alphaPanelWidth = width;
-          });
+          const alpha = +(left / width).toFixed(2);
+          alphaHandlerEl.style.left = `${left - alphaHandlerRect.width / 2}px`;
+          this.alpha.set(alpha);
+          alphaPanelWidth = width;
+          this.alphaControl.setValue(alpha, { emitEvent: false });
+        });
 
         this.alphaControl.valueChanges.pipe(
           throttleTime(16),
@@ -325,6 +374,11 @@ export class ColorChooserComponent {
           const leftHue = (huePanelWidth * h) / 360;
           hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
         });
+
+        this.hexa$.pipe(
+          skip(1),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(value => this.colorChanged.emit(value));
       },
     });
   }
