@@ -1,4 +1,12 @@
-import { afterNextRender, Directive, ElementRef, inject, input, InputSignal, output } from '@angular/core';
+import {
+  afterNextRender,
+  Directive,
+  ElementRef,
+  inject,
+  input,
+  InputSignal,
+  output,
+} from '@angular/core';
 
 export interface AzDragEvent {
   left: number;
@@ -10,16 +18,22 @@ export interface AzDragEvent {
   selector: '[azDragContainer]',
   standalone: true,
   host: {
-    '(mousedown)': 'onMouseDown($event)',
-    '(mousemove)': 'onMouseMove($event)',
-    '(mouseup)': 'onMouseUp()',
+    '(mousedown)': 'onStart($event)',
+    '(touchstart)': 'onStart($event)',
+    '(document:mousemove)': 'onMove($event)',
+    '(document:touchmove)': 'onMove($event)',
+    '(document:mouseup)': 'onEnd()',
+    '(document:touchend)': 'onEnd()',
   },
 })
 export class DragContainer {
   el: ElementRef<HTMLElement> = inject(ElementRef);
   elRect!: DOMRect;
   isMouseDown = false;
-  azDragContainer: InputSignal<{ topCoef: number; leftCoef: number }> = input({ leftCoef: 0, topCoef: 0 }); 
+  azDragContainer: InputSignal<{ topCoef: number; leftCoef: number }> = input({
+    leftCoef: 0,
+    topCoef: 0,
+  });
   azDrag = output<AzDragEvent>();
   prevData: AzDragEvent | null = null;
 
@@ -30,40 +44,46 @@ export class DragContainer {
         const initials = this.azDragContainer();
         const { width, height } = this.elRect;
         const data: AzDragEvent = {
-          top: Math.min((initials.topCoef) * height, height),
-          left: Math.min((initials.leftCoef) * width, width),
+          top: Math.min(initials.topCoef * height, height),
+          left: Math.min(initials.leftCoef * width, width),
           elRect: { height, width },
-        }
+        };
 
         this.azDrag.emit(data);
-      }
-    })
+      },
+    });
   }
 
-  onMouseDown(event: MouseEvent): void {
+  onStart(event: MouseEvent | TouchEvent): void {
+    if (!event.cancelable) return;
+
     event.preventDefault();
     event.stopPropagation();
 
     this.elRect = this.el.nativeElement.getBoundingClientRect();
     this.isMouseDown = true;
+    this.sentData(this.getCoordsFromEvent(event));
   }
 
-  onMouseMove(event: MouseEvent): void {
+  onMove(event: MouseEvent | TouchEvent): void {
     if (!this.isMouseDown) return;
 
+    this.sentData(this.getCoordsFromEvent(event));
+  }
+
+  onEnd(): void {
+    this.isMouseDown = false;
+  }
+
+  private sentData({ left, top }: { left: number; top: number }): void {
     const data: AzDragEvent = {
-      left: Math.max(
-        0,
-        Math.min(this.elRect.width, event.clientX - this.elRect.left),
-      ),
-      top: Math.max(
-        0,
-        Math.min(this.elRect.height, event.clientY - this.elRect.top),
-      ),
+      left: Math.max(0, Math.min(this.elRect.width, left - this.elRect.left)),
+      top: Math.max(0, Math.min(this.elRect.height, top - this.elRect.top)),
       elRect: { width: this.elRect.width, height: this.elRect.height },
     };
 
-    if (JSON.stringify(this.prevData) === JSON.stringify(data)) {
+    if (this.outOfBorder({ left, top })) {
+      console.log('hwllo');
       return;
     }
 
@@ -71,7 +91,28 @@ export class DragContainer {
     this.prevData = data;
   }
 
-  onMouseUp(): void {
-    this.isMouseDown = false;
+  private getCoordsFromEvent(event: MouseEvent | TouchEvent): {
+    left: number;
+    top: number;
+  } {
+    if (event instanceof MouseEvent) {
+      return {
+        top: event.clientY,
+        left: event.clientX,
+      };
+    }
+
+    const { clientX, clientY } = event.touches[0];
+
+    return { top: clientY, left: clientX };
+  }
+
+  outOfBorder({ top, left }: { top: number; left: number }): boolean {
+    return (
+      top < this.elRect.top ||
+      top > this.elRect.bottom ||
+      left < this.elRect.left ||
+      left > this.elRect.right
+    );
   }
 }

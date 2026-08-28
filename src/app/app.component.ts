@@ -13,7 +13,7 @@ export class AppComponent {
   color = '#ff0000ff';
 
   test(value: string): void {
-    // console.log('onValueChanged ', value);
+    console.log('onValueChanged ', value);
   }
 
   onSubmit(): void {}

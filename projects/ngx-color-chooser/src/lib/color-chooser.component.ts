@@ -48,7 +48,7 @@ import { AzDragEvent, DragContainer } from './drag.directive';
       <div class="preview" [ngStyle]="{
         '--input-color': inputColor(),
         '--output-color': hexaColor,
-      }" (click)="copyToClipboard(hexaColor)">
+      }" (click)="onCopied.emit(hexaColor)">
         <div class="clipboard">
           <div class="box box1"></div>
           <div class="box box2"></div>
@@ -145,6 +145,7 @@ export class ColorChooserComponent {
   colorChanged = output<string>();
   onSubmit = output<string>();
   onCancel = output<void>();
+  onCopied = output<string>();
 
   hue = linkedSignal<string, number>({
     source: this.inputColor,
@@ -342,14 +343,6 @@ export class ColorChooserComponent {
         ).subscribe(value => this.colorChanged.emit(value));
       },
     });
-  }
-
-  async copyToClipboard(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (err) {
-      console.error("unable to copy");
-    }
   }
 
   updateColorPanelHandlerPos({ top, left, elRect: { width, height } }: AzDragEvent): void {
