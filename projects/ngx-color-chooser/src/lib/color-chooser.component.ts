@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  AfterViewInit,
   ChangeDetectionStrategy, Component,
   computed,
   DestroyRef,
@@ -292,6 +293,7 @@ export class ColorChooserComponent {
   constructor() {
     afterNextRender({
       read: () => {
+        let inited = false;
         const colorPanelEl = this.colorPanel().nativeElement;
         const huePanelEl = this.huePanel().nativeElement;
         const alphaPanelEl = this.alphaPanel().nativeElement;
@@ -307,6 +309,10 @@ export class ColorChooserComponent {
 
             this.saturation.set(s);
             this.value.set(v);
+
+            if (inited) {
+              this.colorChanged.emit(this.hexa());
+            }
           });
 
         drag$(huePanelEl, { leftCoef: h / 360, topCoef: 0 }).pipe(
@@ -315,6 +321,10 @@ export class ColorChooserComponent {
             this.huePanelRect.set({ width });
             const hue = Math.round((left / width) * 360);
             this.hue.set(hue);
+
+            if (inited) {
+              this.colorChanged.emit(this.hexa());
+            }
           });
 
        drag$(alphaPanelEl, { topCoef: 0, leftCoef: +a.toFixed(2) }).pipe(
