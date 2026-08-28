@@ -23,7 +23,7 @@ import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/ut
 import { hexColorValidator } from './validators/hex.validator';
 
 @Component({
-  selector: 'lib-color-chooser',
+  selector: 'ngx-color-chooser',
   imports: [NgStyle, ReactiveFormsModule],
   template: `
     @let hexaColor = hexa();

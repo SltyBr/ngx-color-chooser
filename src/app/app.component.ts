@@ -9,7 +9,7 @@ import { ColorChooserComponent } from 'color-chooser';
     styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'ngx-color-chooser';
+  title = 'demo-color-chooser';
   color = '#ff0000ff';
 
   test(value: string): void {

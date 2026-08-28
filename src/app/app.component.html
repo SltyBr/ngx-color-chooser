@@ -1,9 +1,9 @@
 <div class="color-chooser-container">
-  <lib-color-chooser
+  <ngx-color-chooser
     [inputColor]="color"
     (onSubmit)="onSubmit()"
     (colorChanged)="test($event)"
-  ></lib-color-chooser>
+  ></ngx-color-chooser>
 </div>
 
 <input type="text" (input)="color = $event.target.value" [value]="color">
