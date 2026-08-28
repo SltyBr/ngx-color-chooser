@@ -16,7 +16,7 @@ import { NgStyle } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
-import { distinctUntilChanged, skip, throttleTime } from 'rxjs';
+import { skip, throttleTime } from 'rxjs';
 
 import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
 import { hexColorValidator } from './validators/hex.validator';
@@ -295,7 +295,6 @@ export class ColorChooserComponent {
       read: () => {
         this.alphaControl.valueChanges.pipe(
           throttleTime(16),
-          distinctUntilChanged(),
           takeUntilDestroyed(this.destroyRef),
         ).subscribe((data) => {
           this.alpha.set(+(data).toFixed(2));
