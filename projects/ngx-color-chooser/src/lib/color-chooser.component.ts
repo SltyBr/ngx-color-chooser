@@ -1,6 +1,5 @@
 import {
   afterNextRender,
-  AfterViewInit,
   ChangeDetectionStrategy, Component,
   computed,
   DestroyRef,
@@ -19,20 +18,21 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { distinctUntilChanged, skip, throttleTime } from 'rxjs';
 
-import { drag$ } from './helpers/drag.observable';
 import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
 import { hexColorValidator } from './validators/hex.validator';
+import { AzDragEvent, DragContainer } from './drag.directive';
 
 @Component({
   selector: 'ngx-color-chooser',
-  imports: [NgStyle, ReactiveFormsModule],
+  imports: [NgStyle, ReactiveFormsModule, DragContainer],
   template: `
     @let hexaColor = hexa();
     @let hueColorValue = hueColor();
 
     <div
       class="color-chooser"
-      #colorPanel
+      [azDragContainer]="{ topCoef: (1 - value()), leftCoef: saturation() }"
+      (azDrag)="updateColorPanelHandlerPos($event)"
       [ngStyle]="{
         'background-color': hueColorValue,
       }"
@@ -55,17 +55,21 @@ import { hexColorValidator } from './validators/hex.validator';
         </div>
       </div>
       <div class="controls">
-        <div class="hue-chooser" #huePanel>
+        <div class="hue-chooser"
+          [azDragContainer]="{ leftCoef: hue() / 360, topCoef: 0 }"
+          (azDrag)="updateHuePanelHandlerPos($event)"
+        >
           <div class="handler centered-vertical" #hueHandler [ngStyle]="{
-          'left.px': hueHandlerPos().left,
-        }"></div>
+            'left.px': hueHandlerPos().left,
+          }"></div>
         </div>
         <div
           class="alpha-chooser"
-          #alphaPanel
           [ngStyle]="{
             '--hueColor': hueColorValue,
           }"
+          [azDragContainer]="{ topCoef: 0, leftCoef: alpha() }"
+          (azDrag)="updateAlphaPanelHandlerPos($event)"
         >
           <div class="alpha-placeholder"></div>
           <div class="handler centered-vertical" #alphaHandler [ngStyle]="{
@@ -130,13 +134,8 @@ import { hexColorValidator } from './validators/hex.validator';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorChooserComponent {
-  colorPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('colorPanel');
   colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
-
-  huePanel: Signal<ElementRef<HTMLElement>> = viewChild.required('huePanel');
   hueHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('hueHandler');
-
-  alphaPanel: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaPanel');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
   inputColor = input.required<string>();
@@ -293,49 +292,6 @@ export class ColorChooserComponent {
   constructor() {
     afterNextRender({
       read: () => {
-        let inited = false;
-        const colorPanelEl = this.colorPanel().nativeElement;
-        const huePanelEl = this.huePanel().nativeElement;
-        const alphaPanelEl = this.alphaPanel().nativeElement;
-        const { r, g, b, a } = hexaToRgba(this.inputColor());
-        const { h, s, v } = rgbToHsv(r, g, b);
-
-        drag$(colorPanelEl, { topCoef: (1 - v), leftCoef: s }).pipe(
-          takeUntilDestroyed(this.destroyRef),
-        ).subscribe(({ top, left, containerRect: { width, height } }) => {
-            this.colorContainerRect.set({ width, height });
-            const s = left / width;
-            const v = 1 - top / height;
-
-            this.saturation.set(s);
-            this.value.set(v);
-
-            if (inited) {
-              this.colorChanged.emit(this.hexa());
-            }
-          });
-
-        drag$(huePanelEl, { leftCoef: h / 360, topCoef: 0 }).pipe(
-          takeUntilDestroyed(this.destroyRef),
-        ).subscribe(({ left, containerRect: { width } }) => {
-            this.huePanelRect.set({ width });
-            const hue = Math.round((left / width) * 360);
-            this.hue.set(hue);
-
-            if (inited) {
-              this.colorChanged.emit(this.hexa());
-            }
-          });
-
-       drag$(alphaPanelEl, { topCoef: 0, leftCoef: +a.toFixed(2) }).pipe(
-          takeUntilDestroyed(this.destroyRef),
-        ).subscribe(({ left, containerRect: { width } }) => {
-          this.alphaPanelRect.set({ width });
-
-          const alpha = +(left / width).toFixed(2);
-          this.alpha.set(alpha);
-        });
-
         this.alphaControl.valueChanges.pipe(
           throttleTime(16),
           distinctUntilChanged(),
@@ -394,5 +350,25 @@ export class ColorChooserComponent {
     } catch (err) {
       console.error("unable to copy");
     }
+  }
+
+  updateColorPanelHandlerPos({ top, left, elRect: { width, height } }: AzDragEvent): void {
+    const s = left / width;
+    const v = 1 - top / height;
+    this.saturation.set(s);
+    this.value.set(v);
+    this.colorContainerRect.set({ width, height });
+  }
+
+  updateHuePanelHandlerPos({ left, elRect: { width } }: AzDragEvent): void {
+    const hue = Math.round((left / width) * 360);
+    this.hue.set(hue);
+    this.huePanelRect.set({ width });
+  }
+
+  updateAlphaPanelHandlerPos({ left, elRect: { width } }: AzDragEvent): void {
+    this.alphaPanelRect.set({ width });
+    const alpha = +(left / width).toFixed(2);
+    this.alpha.set(alpha);
   }
 }
