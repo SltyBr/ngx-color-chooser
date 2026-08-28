@@ -4,8 +4,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
-      "color-chooser": [
-        "./dist/color-chooser"
+      "ngx-color-chooser": [
+        "./dist/ngx-color-chooser"
       ]
     },
     "outDir": "./dist/out-tsc",

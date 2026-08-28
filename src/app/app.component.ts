@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ColorChooserComponent } from 'color-chooser';
+import { ColorChooserComponent } from 'ngx-color-chooser';
 
 @Component({
     selector: 'app-root',
@@ -13,7 +13,7 @@ export class AppComponent {
   color = '#ff0000ff';
 
   test(value: string): void {
-    console.log('onValueChanged ', value)
+    console.log('onValueChanged ', value);
   }
 
   onSubmit(): void {}
