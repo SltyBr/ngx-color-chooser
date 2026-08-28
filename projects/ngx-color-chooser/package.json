@@ -1,5 +1,5 @@
 {
-  "name": "ngx-color-chooser",
+  "name": "@am-zero/ngx-color-chooser",
   "version": "0.0.1",
   "peerDependencies": {
     "@angular/common": "^20.3.28",
@@ -8,5 +8,8 @@
   "dependencies": {
     "tslib": "^2.3.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  }
 }
