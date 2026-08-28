@@ -8,6 +8,7 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
   Signal,
   viewChild
 } from '@angular/core';
@@ -15,7 +16,7 @@ import { NgStyle } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
-import { distinctUntilChanged, map, shareReplay, skip, switchMap, throttleTime } from 'rxjs';
+import { distinctUntilChanged, skip, throttleTime } from 'rxjs';
 
 import { drag$ } from './helpers/drag.observable';
 import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
@@ -35,7 +36,10 @@ import { hexColorValidator } from './validators/hex.validator';
         'background-color': hueColorValue,
       }"
     >
-      <div class="handler" #colorHandler></div>
+      <div class="handler" #colorHandler [ngStyle]="{
+        'top.px': colorHandlerPos().top,
+        'left.px': colorHandlerPos().left,
+      }"></div>
       <div class="white-gradient"></div>
       <div class="black-gradient"></div>
     </div>
@@ -51,7 +55,9 @@ import { hexColorValidator } from './validators/hex.validator';
       </div>
       <div class="controls">
         <div class="hue-chooser" #huePanel>
-          <div class="handler centered-vertical" #hueHandler></div>
+          <div class="handler centered-vertical" #hueHandler [ngStyle]="{
+          'left.px': hueHandlerPos().left,
+        }"></div>
         </div>
         <div
           class="alpha-chooser"
@@ -61,7 +67,9 @@ import { hexColorValidator } from './validators/hex.validator';
           }"
         >
           <div class="alpha-placeholder"></div>
-          <div class="handler centered-vertical" #alphaHandler></div>
+          <div class="handler centered-vertical" #alphaHandler [ngStyle]="{
+            'left.px': alphaHandlerPos().left,
+          }"></div>
         </div>
       </div>
     </div>
@@ -133,15 +141,6 @@ export class ColorChooserComponent {
   inputColor = input.required<string>();
   submitBtnText = input<string>('Ok');
   cancelBtnText = input<string>('Cancel');
-  inputColor$ = toObservable(this.inputColor).pipe(
-    map(color => {
-      const { r, g, b, a } = hexaToRgba(color);
-      const { h, s, v } = rgbToHsv(r, g, b);
-
-      return { h, s, v, a };
-    }),
-    shareReplay(),
-  );
 
   colorChanged = output<string>();
   onSubmit = output<string>();
@@ -215,7 +214,7 @@ export class ColorChooserComponent {
   hueColor = computed(() => {
     const hex = hsvToHex({ h: this.hue(), s: 1, v: 1 });
 
-    return `${hex}`;
+    return hex;
   });
 
   hexa = computed(() => {
@@ -230,12 +229,12 @@ export class ColorChooserComponent {
     }, alpha);
 
     const { h, s, l } = hsvToHsl({ h: hue, s: saturation, v: value });
-    this.hslForm.setValue({ h, s, l }, { emitEvent: false });
-
-    this.hexControl.setValue(hex, { emitEvent: false });
-
     const { r, g, b } = hexaToRgba(hex);
+
+    this.hslForm.setValue({ h, s, l }, { emitEvent: false });
+    this.hexControl.setValue(hex, { emitEvent: false });
     this.rgbForm.setValue({ r, g, b }, { emitEvent: false });
+    this.alphaControl.setValue(alpha, { emitEvent: false });
 
     return hex;
   });
@@ -244,24 +243,65 @@ export class ColorChooserComponent {
 
   private readonly destroyRef = inject(DestroyRef);
 
+  colorContainerRect = signal<Pick<DOMRect, 'width' | 'height'>>({ width: 0, height: 0 });
+  colorHandlerRect = linkedSignal({
+    source: this.colorPanelHandler,
+    computation: (colorPanelHandler) => {
+      return colorPanelHandler.nativeElement.getBoundingClientRect();
+    }
+  });
+  colorHandlerPos = computed<{ left: number, top: number }>(() => {
+    const { width, height } = this.colorContainerRect();
+    const colorHandlerRect = this.colorHandlerRect();
+    const left = this.saturation() * width - colorHandlerRect.width / 2;
+    const top = (1 - this.value()) * height - colorHandlerRect.height / 2;
+
+    return { left, top };
+  });
+
+  huePanelRect = signal<Pick<DOMRect, 'width'>>({ width: 0 });
+  hueHandlerRect = linkedSignal({
+    source: this.hueHandler,
+    computation: (hueHandler) => {
+      return hueHandler.nativeElement.getBoundingClientRect();
+    }
+  });
+  hueHandlerPos = computed<{ left: number }>(() => {
+    const { width } = this.huePanelRect();
+    const handlerRect = this.hueHandlerRect();
+    const left = this.hue() * width / 360 - handlerRect.width / 2;
+
+    return { left };
+  });
+
+  alphaPanelRect = signal<Pick<DOMRect, 'width'>>({ width: 0 });
+  alphaHandlerRect = linkedSignal({
+    source: this.alphaHandler,
+    computation: (alphaHandler) => {
+      return alphaHandler.nativeElement.getBoundingClientRect();
+    }
+  });
+  alphaHandlerPos = computed<{ left: number }>(() => {
+    const { width } = this.alphaPanelRect();
+    const handlerRect = this.alphaHandlerRect();
+    const left = this.alpha() * width - handlerRect.width / 2;
+
+    return { left };
+  });
+
   constructor() {
     afterNextRender({
       read: () => {
         const colorPanelEl = this.colorPanel().nativeElement;
-        const colorHandlerEl = this.colorPanelHandler().nativeElement;
-        const colorPanelHandlerRect = colorHandlerEl.getBoundingClientRect();
-        let colorPanelHeight = 0;
-        let colorPanelWidth = 0;
+        const huePanelEl = this.huePanel().nativeElement;
+        const alphaPanelEl = this.alphaPanel().nativeElement;
+        const { r, g, b, a } = hexaToRgba(this.inputColor());
+        const { h, s, v } = rgbToHsv(r, g, b);
 
-        this.inputColor$.pipe(
-          switchMap(({ v, s }) => drag$(colorPanelEl, { topCoef: (1 - v), leftCoef: s })),
+        drag$(colorPanelEl, { topCoef: (1 - v), leftCoef: s }).pipe(
           takeUntilDestroyed(this.destroyRef),
         ).subscribe(({ top, left, containerRect: { width, height } }) => {
-            colorHandlerEl.style.top = `${top - colorPanelHandlerRect.height / 2}px`;
-            colorHandlerEl.style.left = `${left - colorPanelHandlerRect.width / 2}px`;
-            colorPanelHeight = height;
-            colorPanelWidth = width;
-
+            this.colorContainerRect.set({ width, height });
             const s = left / width;
             const v = 1 - top / height;
 
@@ -269,36 +309,21 @@ export class ColorChooserComponent {
             this.value.set(v);
           });
 
-        const huePanelEl = this.huePanel().nativeElement;
-        const hueHandlerEl = this.hueHandler().nativeElement;
-        const hueHandlerRect = hueHandlerEl.getBoundingClientRect();
-        let huePanelWidth = 0;
-
-        this.inputColor$.pipe(
-          switchMap(({ h }) => drag$(huePanelEl, { leftCoef: h / 360, topCoef: 0 })),
+        drag$(huePanelEl, { leftCoef: h / 360, topCoef: 0 }).pipe(
           takeUntilDestroyed(this.destroyRef),
         ).subscribe(({ left, containerRect: { width } }) => {
-            hueHandlerEl.style.left = `${left - hueHandlerRect.width / 2}px`;
-            huePanelWidth = width;
+            this.huePanelRect.set({ width });
             const hue = Math.round((left / width) * 360);
-
             this.hue.set(hue);
           });
 
-        const alphaPanelEl = this.alphaPanel().nativeElement;
-        const alphaHandlerEl = this.alphaHandler().nativeElement;
-        const alphaHandlerRect = alphaHandlerEl.getBoundingClientRect();
-        let alphaPanelWidth = 0;
-
-        this.inputColor$.pipe(
-          switchMap(({ a }) => drag$(alphaPanelEl, { topCoef: 0, leftCoef: a })),
+       drag$(alphaPanelEl, { topCoef: 0, leftCoef: +a.toFixed(2) }).pipe(
           takeUntilDestroyed(this.destroyRef),
         ).subscribe(({ left, containerRect: { width } }) => {
+          this.alphaPanelRect.set({ width });
+
           const alpha = +(left / width).toFixed(2);
-          alphaHandlerEl.style.left = `${left - alphaHandlerRect.width / 2}px`;
           this.alpha.set(alpha);
-          alphaPanelWidth = width;
-          this.alphaControl.setValue(alpha, { emitEvent: false });
         });
 
         this.alphaControl.valueChanges.pipe(
@@ -307,7 +332,6 @@ export class ColorChooserComponent {
           takeUntilDestroyed(this.destroyRef),
         ).subscribe((data) => {
           this.alpha.set(+(data).toFixed(2));
-          alphaHandlerEl.style.left = `${(data * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
         });
 
         this.rgbForm.valueChanges.pipe(
@@ -319,15 +343,6 @@ export class ColorChooserComponent {
           this.hue.set(h);
           this.saturation.set(s);
           this.value.set(v);
-
-          const top = (1 - v) * colorPanelHeight;
-          const left = s * colorPanelWidth;
-
-          colorHandlerEl.style.top = `${top}px`;
-          colorHandlerEl.style.left = `${left}px`;
-
-          const leftHue = (huePanelWidth * h) / 360;
-          hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
         });
 
         this.hexControl.valueChanges.pipe(
@@ -341,18 +356,7 @@ export class ColorChooserComponent {
           this.hue.set(h);
           this.saturation.set(s);
           this.value.set(v);
-
-          const top = (1 - v) * colorPanelHeight;
-          const left = s * colorPanelWidth;
-
-          colorHandlerEl.style.top = `${top - colorPanelHandlerRect.height / 2}px`;
-          colorHandlerEl.style.left = `${left - colorPanelHandlerRect.width / 2}px`;
-
-          const leftHue = (huePanelWidth * h) / 360;
-          hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
-
           this.alpha.set(+a.toFixed(2));
-          alphaHandlerEl.style.left = `${(a * alphaPanelWidth) - alphaHandlerRect.width / 2}px`;
         });
 
         this.hslForm.valueChanges.pipe(
@@ -364,15 +368,6 @@ export class ColorChooserComponent {
           this.hue.set(h);
           this.saturation.set(s);
           this.value.set(v);
-
-          const top = (1 - v) * colorPanelHeight;
-          const left = s * colorPanelWidth;
-
-          colorHandlerEl.style.top = `${top - colorPanelHandlerRect.height / 2}px`;
-          colorHandlerEl.style.left = `${left - colorPanelHandlerRect.width / 2}px`;
-
-          const leftHue = (huePanelWidth * h) / 360;
-          hueHandlerEl.style.left = `${leftHue - hueHandlerRect.width / 2}px`;
         });
 
         this.hexa$.pipe(
