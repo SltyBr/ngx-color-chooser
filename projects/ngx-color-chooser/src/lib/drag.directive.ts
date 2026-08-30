@@ -29,7 +29,7 @@ export interface AzDragEvent {
 export class DragContainer {
   el: ElementRef<HTMLElement> = inject(ElementRef);
   elRect!: DOMRect;
-  isMouseDown = false;
+  eventStated = false;
   azDragContainer: InputSignal<{ topCoef: number; leftCoef: number }> = input({
     leftCoef: 0,
     topCoef: 0,
@@ -61,18 +61,18 @@ export class DragContainer {
     event.stopPropagation();
 
     this.elRect = this.el.nativeElement.getBoundingClientRect();
-    this.isMouseDown = true;
+    this.eventStated = true;
     this.sentData(this.getCoordsFromEvent(event));
   }
 
   onMove(event: MouseEvent | TouchEvent): void {
-    if (!this.isMouseDown) return;
+    if (!this.eventStated) return;
 
     this.sentData(this.getCoordsFromEvent(event));
   }
 
   onEnd(): void {
-    this.isMouseDown = false;
+    this.eventStated = false;
   }
 
   private sentData({ left, top }: { left: number; top: number }): void {
@@ -83,7 +83,6 @@ export class DragContainer {
     };
 
     if (this.outOfBorder({ left, top })) {
-      console.log('hwllo');
       return;
     }
 
