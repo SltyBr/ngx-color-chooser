@@ -1,15 +1,3 @@
-export interface HsvColor {
-  h: number;
-  s: number;
-  v: number;
-}
-
-export interface RgbColor {
-  r: number;
-  g: number;
-  b: number;
-}
-
 interface RGBA {
   r: number; // Red: 0-255
   g: number; // Green: 0-255
@@ -36,16 +24,17 @@ export const hexaToRgba = (hex: string): RGBA => {
   const g = parseInt(cleanHex.slice(2, 4), 16);
   const b = parseInt(cleanHex.slice(4, 6), 16);
   const a = cleanHex.length === 8
-    ? parseInt(cleanHex.slice(6, 8), 16) / 255
+    ? +(parseInt(cleanHex.slice(6, 8), 16) / 255).toFixed(2)
     : 1;
 
   return { r, g, b, a };
 };
 
-export const hsvToHex = ({ h, s, v }: HsvColor, a = 1): string => {
+export const hsvToHex = ({ h, s, v }: HSV, alpha = 1): string => {
+  // Нормализация входных значений
   h = ((h % 360) + 360) % 360;
-  s = Math.max(0, Math.min(100, s));
-  v = Math.max(0, Math.min(100, v));
+  s = Math.max(0, Math.min(1, s)); // s должен быть 0-1
+  v = Math.max(0, Math.min(1, v)); // v должен быть 0-1
 
   const c = v * s;
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
@@ -62,23 +51,24 @@ export const hsvToHex = ({ h, s, v }: HsvColor, a = 1): string => {
   else if (h < 300) [r, g, b] = [x, 0, c];
   else [r, g, b] = [c, 0, x];
 
-  const toHex = (n: number) =>
-    Math.round((n + m) * 255)
-      .toString(16)
-      .padStart(2, "0");
+  const toHex = (n: number) => {
+    const val = Math.round((n + m) * 255);
+    return Math.max(0, Math.min(255, val)).toString(16).padStart(2, "0");
+  };
 
-  const alpha = Math.round(Math.max(0, Math.min(1, a)) * 255)
-    .toString(16)
-    .padStart(2, "0");
+  const alphaValue = Math.max(0, Math.min(1, alpha));
+  const alphaHex = Math.round(alphaValue * 255).toString(16).padStart(2, "0");
 
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}${alpha}`;
+  const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  
+  return alphaValue === 1 ? hex : `${hex}${alphaHex}`;
 };
 
 export const rgbToHsv = (
   rChannel: number,
   gChannel: number,
   bChannel: number,
-): HsvColor => {
+): HSV => {
   // Normalize RGB values to 0-1 range
   const r = rChannel / 255;
   const g = gChannel / 255;
@@ -133,11 +123,9 @@ export const hsvToHsl = ({ h, s, v }: HSV): HSL => {
 }
 
 export const hslToHsv = ({ h, s, l }: HSL): HSV => {
-  // Convert percentages to decimals
   const sDecimal = s / 100;
   const lDecimal = l / 100;
 
-  // Calculate HSV values
   const v = lDecimal + sDecimal * Math.min(lDecimal, 1 - lDecimal);
   const saturation = v === 0 ? 0 : 2 * (1 - lDecimal / v);
 
@@ -146,4 +134,8 @@ export const hslToHsv = ({ h, s, l }: HSL): HSV => {
     s: Math.round(saturation * 100) / 100,
     v: Math.round(v * 100) / 100
   };
+}
+
+export const isValidHex = (value: string): boolean => {
+  return /^#[0-9A-Fa-f]{6}$/.test(value) || /^#[0-9A-Fa-f]{8}$/.test(value);
 }

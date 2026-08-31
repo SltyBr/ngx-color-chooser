@@ -16,7 +16,7 @@ import { NgStyle } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
-import { skip, throttleTime } from 'rxjs';
+import { filter, skip, throttleTime } from 'rxjs';
 
 import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
 import { hexColorValidator } from './validators/hex.validator';
@@ -132,6 +132,10 @@ import { AzDragEvent, DragContainer } from './drag.directive';
   `,
   styleUrls: ['color-chooser.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[style.width.px]': 'width()',
+    '[style.height.px]': 'height()',
+  }
 })
 export class ColorChooserComponent {
   colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
@@ -139,6 +143,8 @@ export class ColorChooserComponent {
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
   inputColor = input.required<string>();
+  width = input<number>();
+  height = input<number>();
   submitBtnText = input<string>('Ok');
   cancelBtnText = input<string>('Cancel');
 
@@ -176,17 +182,6 @@ export class ColorChooserComponent {
       return v;
     }
   });
-
-  hsv = linkedSignal<string, { h: number, s: number; v: number }>({
-    source: this.inputColor,
-    computation: (value) => {
-      const { r, g, b } = hexaToRgba(value);
-      const { h, s, v } = rgbToHsv(r, g, b);
-
-      return { h, s, v };
-    }
-  }
-  )
 
   alpha = linkedSignal<string, number>({
     source: this.inputColor,
@@ -238,6 +233,8 @@ export class ColorChooserComponent {
     this.alphaControl.setValue(alpha, { emitEvent: false });
 
     return hex;
+  }, {
+    equal: (a: string, b: string) => a === b,
   });
   
   hexa$ = toObservable(this.hexa);
@@ -256,6 +253,8 @@ export class ColorChooserComponent {
     const colorHandlerRect = this.colorHandlerRect();
     const left = this.saturation() * width - colorHandlerRect.width / 2;
     const top = (1 - this.value()) * height - colorHandlerRect.height / 2;
+    console.log('colorHandlerPos this.saturation() ', this.saturation())
+    console.log('colorHandlerPos ', left)
 
     return { left, top };
   });
@@ -297,7 +296,7 @@ export class ColorChooserComponent {
           throttleTime(16),
           takeUntilDestroyed(this.destroyRef),
         ).subscribe((data) => {
-          this.alpha.set(+(data).toFixed(2));
+          this.alpha.set(data);
         });
 
         this.rgbForm.valueChanges.pipe(
@@ -313,6 +312,7 @@ export class ColorChooserComponent {
 
         this.hexControl.valueChanges.pipe(
           throttleTime(16),
+          filter(() => this.hexControl.valid),
           takeUntilDestroyed(this.destroyRef),
         ).subscribe(hexa => {
           const { r, g, b, a } = hexaToRgba(hexa);
@@ -322,7 +322,7 @@ export class ColorChooserComponent {
           this.hue.set(h);
           this.saturation.set(s);
           this.value.set(v);
-          this.alpha.set(+a.toFixed(2));
+          this.alpha.set(a);
         });
 
         this.hslForm.valueChanges.pipe(
@@ -353,7 +353,7 @@ export class ColorChooserComponent {
   }
 
   updateHuePanelHandlerPos({ left, elRect: { width } }: AzDragEvent): void {
-    const hue = Math.round((left / width) * 360);
+    const hue = (left / width) * 360;
     this.hue.set(hue);
     this.huePanelRect.set({ width });
   }

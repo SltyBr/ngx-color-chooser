@@ -5,6 +5,7 @@ import {
   inject,
   input,
   InputSignal,
+  NgZone,
   output,
 } from '@angular/core';
 
@@ -29,13 +30,12 @@ export interface AzDragEvent {
 export class DragContainer {
   el: ElementRef<HTMLElement> = inject(ElementRef);
   elRect!: DOMRect;
-  eventStated = false;
+  eventStarted = false;
   azDragContainer: InputSignal<{ topCoef: number; leftCoef: number }> = input({
     leftCoef: 0,
     topCoef: 0,
   });
   azDrag = output<AzDragEvent>();
-  prevData: AzDragEvent | null = null;
 
   constructor() {
     afterNextRender({
@@ -61,18 +61,18 @@ export class DragContainer {
     event.stopPropagation();
 
     this.elRect = this.el.nativeElement.getBoundingClientRect();
-    this.eventStated = true;
+    this.eventStarted = true;
     this.sentData(this.getCoordsFromEvent(event));
   }
 
   onMove(event: MouseEvent | TouchEvent): void {
-    if (!this.eventStated) return;
+    if (!this.eventStarted) return;
 
     this.sentData(this.getCoordsFromEvent(event));
   }
 
   onEnd(): void {
-    this.eventStated = false;
+    this.eventStarted = false;
   }
 
   private sentData({ left, top }: { left: number; top: number }): void {
@@ -81,13 +81,7 @@ export class DragContainer {
       top: Math.max(0, Math.min(this.elRect.height, top - this.elRect.top)),
       elRect: { width: this.elRect.width, height: this.elRect.height },
     };
-
-    if (this.outOfBorder({ left, top })) {
-      return;
-    }
-
     this.azDrag.emit(data);
-    this.prevData = data;
   }
 
   private getCoordsFromEvent(event: MouseEvent | TouchEvent): {
@@ -106,12 +100,4 @@ export class DragContainer {
     return { top: clientY, left: clientX };
   }
 
-  outOfBorder({ top, left }: { top: number; left: number }): boolean {
-    return (
-      top < this.elRect.top ||
-      top > this.elRect.bottom ||
-      left < this.elRect.left ||
-      left > this.elRect.right
-    );
-  }
 }

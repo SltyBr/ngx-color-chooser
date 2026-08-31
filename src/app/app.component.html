@@ -1,9 +1,18 @@
+<h1>Ngx color chooser</h1>
+
+<label for="input" class="input">
+  input
+  <input id="input" type="text" (change)="test($event)" [value]="color">
+</label>
 <div class="color-chooser-container">
   <ngx-color-chooser
+    class="color-chooser"
     [inputColor]="color"
-    (onSubmit)="onSubmit()"
     (colorChanged)="test($event)"
+    (onSubmit)="onSubmit()"
   ></ngx-color-chooser>
+  <div class="color">
+    output: {{ color }}
+    <div class="color-box" [style.background-color]="color"></div>
+  </div>
 </div>
-
-<input type="text" (input)="color = $event.target.value" [value]="color">

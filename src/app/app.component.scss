@@ -5,6 +5,19 @@
 }
 
 .color-chooser-container {
+  display: flex;
+  gap: 16px;
+}
+
+.color-chooser {
   width: 500px;
-  height: 400px;
+  height: 500px;
+  border: 1px solid black;
+}
+
+.color {
+  .color-box {
+    width: 100px;
+    height: 50px;
+  }
 }
