@@ -154,7 +154,7 @@ export class ColorChooserComponent {
   onCopied = output<string>();
 
   hue = linkedSignal<string, number>({
-    source: this.inputColor,
+    source: () => this.inputColor(),
     computation: (value) => {
       const { r, g, b } = hexaToRgba(value);
       const { h } = rgbToHsv(r, g, b);
@@ -164,7 +164,7 @@ export class ColorChooserComponent {
   });
 
   saturation = linkedSignal<string, number>({
-    source: this.inputColor,
+    source: () => this.inputColor(),
     computation: (value) => {
       const { r, g, b } = hexaToRgba(value);
       const { s } = rgbToHsv(r, g, b);
@@ -174,7 +174,7 @@ export class ColorChooserComponent {
   });
 
   value = linkedSignal<string, number>({
-    source: this.inputColor,
+    source: () => this.inputColor(),
     computation: (value) => {
       const { r, g, b } = hexaToRgba(value);
       const { v } = rgbToHsv(r, g, b);
@@ -184,7 +184,7 @@ export class ColorChooserComponent {
   });
 
   alpha = linkedSignal<string, number>({
-    source: this.inputColor,
+    source: () => this.inputColor(),
     computation: (value) => {
       const { a } = hexaToRgba(value);
 
@@ -243,7 +243,7 @@ export class ColorChooserComponent {
 
   colorContainerRect = signal<Pick<DOMRect, 'width' | 'height'>>({ width: 0, height: 0 });
   colorHandlerRect = linkedSignal({
-    source: this.colorPanelHandler,
+    source: () => this.colorPanelHandler(),
     computation: (colorPanelHandler) => {
       return colorPanelHandler.nativeElement.getBoundingClientRect();
     }
@@ -253,15 +253,13 @@ export class ColorChooserComponent {
     const colorHandlerRect = this.colorHandlerRect();
     const left = this.saturation() * width - colorHandlerRect.width / 2;
     const top = (1 - this.value()) * height - colorHandlerRect.height / 2;
-    console.log('colorHandlerPos this.saturation() ', this.saturation())
-    console.log('colorHandlerPos ', left)
 
     return { left, top };
   });
 
   huePanelRect = signal<Pick<DOMRect, 'width'>>({ width: 0 });
   hueHandlerRect = linkedSignal({
-    source: this.hueHandler,
+    source: () => this.hueHandler(),
     computation: (hueHandler) => {
       return hueHandler.nativeElement.getBoundingClientRect();
     }
@@ -276,7 +274,7 @@ export class ColorChooserComponent {
 
   alphaPanelRect = signal<Pick<DOMRect, 'width'>>({ width: 0 });
   alphaHandlerRect = linkedSignal({
-    source: this.alphaHandler,
+    source: () => this.alphaHandler(),
     computation: (alphaHandler) => {
       return alphaHandler.nativeElement.getBoundingClientRect();
     }
