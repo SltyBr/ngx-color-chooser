@@ -13,7 +13,7 @@ export class AppComponent {
 
   test(value: any): void {
     this.color = value;
-    // console.log('onValueChanged ', value);
+    console.log('onValueChanged ', value);
   }
 
   onSubmit(): void {}

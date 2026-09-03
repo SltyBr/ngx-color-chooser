@@ -2,13 +2,12 @@
 
 <label for="input" class="input">
   input
-  <input id="input" type="text" (change)="test($event)" [value]="color">
+  <input id="input" type="text" [value]="color" (input)="color = $event.target.value">
 </label>
 <div class="color-chooser-container">
   <ngx-color-chooser
     class="color-chooser"
-    [inputColor]="color"
-    (colorChanged)="test($event)"
+    [(inputColor)]="color"
     (onSubmit)="onSubmit()"
   ></ngx-color-chooser>
   <div class="color">

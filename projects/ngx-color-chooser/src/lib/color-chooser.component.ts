@@ -7,9 +7,12 @@ import {
   inject,
   input,
   linkedSignal,
+  model,
+  OnChanges,
   output,
   signal,
   Signal,
+  SimpleChanges,
   viewChild
 } from '@angular/core';
 import { NgStyle } from '@angular/common';
@@ -18,9 +21,9 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { filter, skip, throttleTime } from 'rxjs';
 
-import { hexaToRgba, hslToHsv, hsvToHex, hsvToHsl, rgbToHsv } from './helpers/utils';
 import { hexColorValidator } from './validators/hex.validator';
 import { AzDragEvent, DragContainer } from './drag.directive';
+import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './helpers/utils';
 
 @Component({
   selector: 'ngx-color-chooser',
@@ -60,7 +63,7 @@ import { AzDragEvent, DragContainer } from './drag.directive';
           (azDrag)="updateHuePanelHandlerPos($event)"
         >
           <div class="handler centered-vertical" #hueHandler [ngStyle]="{
-            'left.px': hueHandlerPos().left,
+            'left.px': hueHandlerPos(),
           }"></div>
         </div>
         <div
@@ -73,7 +76,7 @@ import { AzDragEvent, DragContainer } from './drag.directive';
         >
           <div class="alpha-placeholder"></div>
           <div class="handler centered-vertical" #alphaHandler [ngStyle]="{
-            'left.px': alphaHandlerPos().left,
+            'left.px': alphaHandlerPos(),
           }"></div>
         </div>
       </div>
@@ -137,12 +140,12 @@ import { AzDragEvent, DragContainer } from './drag.directive';
     '[style.height.px]': 'height()',
   }
 })
-export class ColorChooserComponent {
+export class ColorChooserComponent implements OnChanges {
   colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
   hueHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('hueHandler');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
 
-  inputColor = input.required<string>();
+  inputColor = model.required<string>();
   width = input<number>();
   height = input<number>();
   submitBtnText = input<string>('Ok');
@@ -153,44 +156,10 @@ export class ColorChooserComponent {
   onCancel = output<void>();
   onCopied = output<string>();
 
-  hue = linkedSignal<string, number>({
-    source: () => this.inputColor(),
-    computation: (value) => {
-      const { r, g, b } = hexaToRgba(value);
-      const { h } = rgbToHsv(r, g, b);
-
-      return h;
-    }
-  });
-
-  saturation = linkedSignal<string, number>({
-    source: () => this.inputColor(),
-    computation: (value) => {
-      const { r, g, b } = hexaToRgba(value);
-      const { s } = rgbToHsv(r, g, b);
-
-      return s;
-    }
-  });
-
-  value = linkedSignal<string, number>({
-    source: () => this.inputColor(),
-    computation: (value) => {
-      const { r, g, b } = hexaToRgba(value);
-      const { v } = rgbToHsv(r, g, b);
-
-      return v;
-    }
-  });
-
-  alpha = linkedSignal<string, number>({
-    source: () => this.inputColor(),
-    computation: (value) => {
-      const { a } = hexaToRgba(value);
-
-      return a;
-    }
-  });
+  hue = signal(0);
+  saturation = signal(0);
+  value = signal(0);
+  alpha = signal(1);
 
   private readonly fb = inject(FormBuilder);
 
@@ -208,7 +177,8 @@ export class ColorChooserComponent {
   });
 
   hueColor = computed(() => {
-    const hex = hsvToHex({ h: this.hue(), s: 1, v: 1 });
+    const { r, g, b } = hsvToRgb(this.hue(), 1, 1);
+    const hex = rgbToHex(r, g, b);
 
     return hex;
   });
@@ -218,14 +188,10 @@ export class ColorChooserComponent {
     const hue = this.hue();
     const saturation = this.saturation();
     const value = this.value();
-    const hex = hsvToHex({
-      h: hue,
-      s: saturation,
-      v: value,
-    }, alpha);
+    const { r, g, b } = hsvToRgb(hue, saturation, value);
+    const hex = rgbToHex(r, g, b, alpha);
 
-    const { h, s, l } = hsvToHsl({ h: hue, s: saturation, v: value });
-    const { r, g, b } = hexaToRgba(hex);
+    const { h, s, l } = hsvToHsl(hue, saturation, value);
 
     this.hslForm.setValue({ h, s, l }, { emitEvent: false });
     this.hexControl.setValue(hex, { emitEvent: false });
@@ -233,8 +199,6 @@ export class ColorChooserComponent {
     this.alphaControl.setValue(alpha, { emitEvent: false });
 
     return hex;
-  }, {
-    equal: (a: string, b: string) => a === b,
   });
   
   hexa$ = toObservable(this.hexa);
@@ -246,7 +210,8 @@ export class ColorChooserComponent {
     source: () => this.colorPanelHandler(),
     computation: (colorPanelHandler) => {
       return colorPanelHandler.nativeElement.getBoundingClientRect();
-    }
+    },
+    equal: (a, b) => JSON.stringify(a) === JSON.stringify(b)
   });
   colorHandlerPos = computed<{ left: number, top: number }>(() => {
     const { width, height } = this.colorContainerRect();
@@ -264,12 +229,12 @@ export class ColorChooserComponent {
       return hueHandler.nativeElement.getBoundingClientRect();
     }
   });
-  hueHandlerPos = computed<{ left: number }>(() => {
+  hueHandlerPos = computed<number>(() => {
     const { width } = this.huePanelRect();
     const handlerRect = this.hueHandlerRect();
     const left = this.hue() * width / 360 - handlerRect.width / 2;
 
-    return { left };
+    return left;
   });
 
   alphaPanelRect = signal<Pick<DOMRect, 'width'>>({ width: 0 });
@@ -279,17 +244,42 @@ export class ColorChooserComponent {
       return alphaHandler.nativeElement.getBoundingClientRect();
     }
   });
-  alphaHandlerPos = computed<{ left: number }>(() => {
+  alphaHandlerPos = computed<number>(() => {
     const { width } = this.alphaPanelRect();
     const handlerRect = this.alphaHandlerRect();
     const left = this.alpha() * width - handlerRect.width / 2;
 
-    return { left };
+    return left;
   });
+
+  ngOnChanges(changes: SimpleChanges): void {
+    const inputColor = changes['inputColor'];
+
+    if (inputColor) {
+      if (this.hexa() !== inputColor.currentValue && !inputColor.firstChange) {
+        const prevColor = hexaToRgba(inputColor.previousValue);
+        const { h: prevHue } = rgbToHsv(prevColor.r, prevColor.g, prevColor.b);
+        const { r, g, b, a } = hexaToRgba(inputColor.currentValue);
+        const { h, s, v } = rgbToHsv(r, g, b, prevHue);
+
+        this.hue.set(h);
+        this.saturation.set(s);
+        this.value.set(v);
+        this.alpha.set(a);
+      }
+    }
+  }
 
   constructor() {
     afterNextRender({
       read: () => {
+        const { r, g, b } = hexaToRgba(this.inputColor());
+        const { h, s, v } = rgbToHsv(r, g, b);
+
+        this.hue.set(h);
+        this.saturation.set(s);
+        this.value.set(v);
+
         this.alphaControl.valueChanges.pipe(
           throttleTime(16),
           takeUntilDestroyed(this.destroyRef),
@@ -327,7 +317,7 @@ export class ColorChooserComponent {
           throttleTime(16),
           takeUntilDestroyed(this.destroyRef)
         ).subscribe(({ h: hChannel = 0, s: sChannel = 0, l = 0 }) => {
-          const { h, s, v } = hslToHsv({ h: hChannel, s: sChannel, l });
+          const { h, s, v } = hslToHsv(hChannel, sChannel, l);
 
           this.hue.set(h);
           this.saturation.set(s);
@@ -337,7 +327,7 @@ export class ColorChooserComponent {
         this.hexa$.pipe(
           skip(1),
           takeUntilDestroyed(this.destroyRef)
-        ).subscribe(value => this.colorChanged.emit(value));
+        ).subscribe(value => this.inputColor.set(value));
       },
     });
   }
@@ -351,7 +341,7 @@ export class ColorChooserComponent {
   }
 
   updateHuePanelHandlerPos({ left, elRect: { width } }: AzDragEvent): void {
-    const hue = (left / width) * 360;
+    const hue = Math.round((left / width) * 360);
     this.hue.set(hue);
     this.huePanelRect.set({ width });
   }
