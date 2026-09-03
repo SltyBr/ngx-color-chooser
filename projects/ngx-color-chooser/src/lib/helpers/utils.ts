@@ -1,15 +1,3 @@
-export interface HsvColor {
-  h: number;
-  s: number;
-  v: number;
-}
-
-export interface RgbColor {
-  r: number;
-  g: number;
-  b: number;
-}
-
 interface RGBA {
   r: number; // Red: 0-255
   g: number; // Green: 0-255
@@ -29,121 +17,159 @@ interface HSL {
   l: number; // 0-100
 }
 
-export const hexaToRgba = (hex: string): RGBA => {
-  const cleanHex = hex.replace("#", "");
-
-  const r = parseInt(cleanHex.slice(0, 2), 16);
-  const g = parseInt(cleanHex.slice(2, 4), 16);
-  const b = parseInt(cleanHex.slice(4, 6), 16);
-  const a = cleanHex.length === 8
-    ? parseInt(cleanHex.slice(6, 8), 16) / 255
-    : 1;
-
-  return { r, g, b, a };
-};
-
-export const hsvToHex = ({ h, s, v }: HsvColor, a = 1): string => {
-  h = ((h % 360) + 360) % 360;
-  s = Math.max(0, Math.min(100, s));
-  v = Math.max(0, Math.min(100, v));
-
-  const c = v * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = v - c;
-
-  let r = 0;
-  let g = 0;
-  let b = 0;
-
-  if (h < 60) [r, g, b] = [c, x, 0];
-  else if (h < 120) [r, g, b] = [x, c, 0];
-  else if (h < 180) [r, g, b] = [0, c, x];
-  else if (h < 240) [r, g, b] = [0, x, c];
-  else if (h < 300) [r, g, b] = [x, 0, c];
-  else [r, g, b] = [c, 0, x];
-
-  const toHex = (n: number) =>
-    Math.round((n + m) * 255)
-      .toString(16)
-      .padStart(2, "0");
-
-  const alpha = Math.round(Math.max(0, Math.min(1, a)) * 255)
-    .toString(16)
-    .padStart(2, "0");
-
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}${alpha}`;
-};
-
-export const rgbToHsv = (
-  rChannel: number,
-  gChannel: number,
-  bChannel: number,
-): HsvColor => {
-  // Normalize RGB values to 0-1 range
-  const r = rChannel / 255;
-  const g = gChannel / 255;
-  const b = bChannel / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const delta = max - min;
-
-  let h = 0;
-  let s = 0;
-  const v = max;
-
-  // Calculate saturation
-  if (max !== 0) {
-    s = delta / max;
-  }
-
-  // Calculate hue
-  if (delta !== 0) {
-    if (max === r) {
-      h = ((g - b) / delta) % 6;
-    } else if (max === g) {
-      h = (b - r) / delta + 2;
-    } else {
-      h = (r - g) / delta + 4;
-    }
-    h = Math.round(h * 60);
-    if (h < 0) {
-      h += 360;
-    }
-  }
-
-  return { h, s, v };
-};
-
-export const hsvToHsl = ({ h, s, v }: HSV): HSL => {
-  const l = v * (1 - s / 2);
-
-  let sResult: number;
-  if (l === 0 || l === 1) {
-    sResult = 0;
+/**
+ * Поддерживает форматы: #RGB, #RGBA, #RRGGBB, #RRGGBBAA
+ */
+export function hexaToRgba(hex: string): RGBA {
+  hex = hex.replace(/^#/, '');
+  
+  let r: number, g: number, b: number, a: number = 1;
+  
+  if (hex.length === 3) {
+    // #RGB
+    r = parseInt(hex[0] + hex[0], 16);
+    g = parseInt(hex[1] + hex[1], 16);
+    b = parseInt(hex[2] + hex[2], 16);
+  } else if (hex.length === 4) {
+    // #RGBA
+    r = parseInt(hex[0] + hex[0], 16);
+    g = parseInt(hex[1] + hex[1], 16);
+    b = parseInt(hex[2] + hex[2], 16);
+    a = parseInt(hex[3] + hex[3], 16) / 255;
+  } else if (hex.length === 6) {
+    // #RRGGBB
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  } else if (hex.length === 8) {
+    // #RRGGBBAA
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+    a = parseInt(hex.substring(6, 8), 16) / 255;
   } else {
-    sResult = (v - l) / Math.min(l, 1 - l);
+    throw new Error('Invalid HEX color format');
   }
+  
+  return { r, g, b, a };
+}
 
+export function rgbToHsv(r: number, g: number, b: number, prevHue?: number): HSV {
+  const rNorm = r / 255;
+  const gNorm = g / 255;
+  const bNorm = b / 255;
+  
+  const max = Math.max(rNorm, gNorm, bNorm);
+  const min = Math.min(rNorm, gNorm, bNorm);
+  const diff = max - min;
+  
+  let h = 0;
+  const s = max === 0 ? 0 : diff / max;
+  const v = max;
+  
+  if (diff !== 0) {
+    if (max === rNorm) {
+      h = 60 * ((gNorm - bNorm) / diff % 6);
+    } else if (max === gNorm) {
+      h = 60 * ((bNorm - rNorm) / diff + 2);
+    } else if (max === bNorm) {
+      h = 60 * ((rNorm - gNorm) / diff + 4);
+    }
+  } else {
+    if (prevHue) {
+      h = prevHue;
+    }
+  }
+  
+  if (h < 0) h += 360;
+  
+  return { h, s, v };
+}
+
+export function hsvToRgb(h: number, s: number, v: number): RGBA {
+  h = ((h % 360) + 360) % 360;
+  const c = v * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = v - c;
+  
+  let rPrime: number, gPrime: number, bPrime: number;
+  
+  if (h < 60) {
+    [rPrime, gPrime, bPrime] = [c, x, 0];
+  } else if (h < 120) {
+    [rPrime, gPrime, bPrime] = [x, c, 0];
+  } else if (h < 180) {
+    [rPrime, gPrime, bPrime] = [0, c, x];
+  } else if (h < 240) {
+    [rPrime, gPrime, bPrime] = [0, x, c];
+  } else if (h < 300) {
+    [rPrime, gPrime, bPrime] = [x, 0, c];
+  } else {
+    [rPrime, gPrime, bPrime] = [c, 0, x];
+  }
+  
   return {
-    h: h,
-    s: Math.round(sResult * 100),
-    l: Math.round(l * 100)
+    r: Math.round((rPrime + m) * 255),
+    g: Math.round((gPrime + m) * 255),
+    b: Math.round((bPrime + m) * 255),
+    a: 1
   };
 }
 
-export const hslToHsv = ({ h, s, l }: HSL): HSV => {
-  // Convert percentages to decimals
-  const sDecimal = s / 100;
-  const lDecimal = l / 100;
-
-  // Calculate HSV values
-  const v = lDecimal + sDecimal * Math.min(lDecimal, 1 - lDecimal);
-  const saturation = v === 0 ? 0 : 2 * (1 - lDecimal / v);
-
+export function hsvToHsl(h: number, s: number, v: number): HSL {
+  const l = v * (1 - s / 2);
+  const sL = l === 0 || l === 1 
+    ? 0 
+    : (v - l) / Math.min(l, 1 - l);
+  
   return {
-    h: Math.round(h),
-    s: Math.round(saturation * 100) / 100,
-    v: Math.round(v * 100) / 100
+    h,
+    s: Math.round(sL * 100),
+    l: Math.round(l * 100),
   };
+}
+
+export function rgbToHex(r: number, g: number, b: number, a?: number): string {
+  const toHex = (value: number): string => {
+    const clamped = Math.max(0, Math.min(255, Math.round(value)));
+    return clamped.toString(16).padStart(2, '0');
+  };
+  
+  if (a !== undefined && a < 1) {
+    const alpha = Math.max(0, Math.min(1, a));
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(alpha * 255)}`;
+  }
+  
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+export function hslToHsv(h: number, s: number, l: number): HSV {
+  // Нормализуем входные значения
+  h = ((h % 360) + 360) % 360;
+  s = Math.max(0, Math.min(100, s)) / 100;
+  l = Math.max(0, Math.min(100, l)) / 100;
+  
+  let v: number;
+  let sV: number;
+  
+  if (l === 0) {
+    v = 0;
+    sV = 0;
+  } else if (l === 1) {
+    v = 1;
+    sV = 0;
+  } else {
+    v = l + s * Math.min(l, 1 - l);
+    sV = v === 0 ? 0 : 2 * (1 - l / v);
+  }
+  
+  return {
+    h: h,
+    s: Math.round(sV),
+    v: Math.round(v)
+  };
+}
+
+export const isValidHex = (value: string): boolean => {
+  return /^#[0-9A-Fa-f]{6}$/.test(value) || /^#[0-9A-Fa-f]{8}$/.test(value);
 }
