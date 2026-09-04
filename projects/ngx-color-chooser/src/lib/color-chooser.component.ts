@@ -277,8 +277,8 @@ export class ColorChooserComponent implements OnChanges {
       read: () => {
         const { r, g, b } = hexaToRgba(this.inputColor());
         const { h, s, v } = rgbToHsv(r, g, b);
-        this.initialColor = this.inputColor();
 
+        this.initialColor = this.inputColor();
         this.hue.set(h);
         this.saturation.set(s);
         this.value.set(v);
@@ -307,7 +307,6 @@ export class ColorChooserComponent implements OnChanges {
           takeUntilDestroyed(this.destroyRef),
         ).subscribe(hexa => {
           const { r, g, b, a } = hexaToRgba(hexa);
-
           const { h, s, v } = rgbToHsv(r, g, b);
 
           this.hue.set(h);
@@ -330,7 +329,9 @@ export class ColorChooserComponent implements OnChanges {
         this.hexa$.pipe(
           skip(1),
           takeUntilDestroyed(this.destroyRef)
-        ).subscribe(value => this.inputColor.set(value));
+        ).subscribe(value => {
+          this.inputColor.set(value)
+        });
       },
     });
   }

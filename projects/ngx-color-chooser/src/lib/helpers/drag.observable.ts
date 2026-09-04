@@ -1,5 +1,4 @@
 import {
-  distinctUntilChanged,
   fromEvent,
   map,
   merge,
@@ -19,6 +18,21 @@ export const drag$ = (
     left: (initials?.leftCoef || 0) * containerRect.width,
     containerRect,
   });
+  
+  const startEvent$ = merge(
+    fromEvent<MouseEvent>(dragContainer, 'mousedown'),
+    fromEvent<TouchEvent>(dragContainer, 'touchstart'),
+  );
+
+  const moveEvent$ = merge(
+    fromEvent<TouchEvent>(document, 'touchmove'),
+    fromEvent<MouseEvent>(document, 'mousemove'),
+  );
+
+  const endEvent$ = merge(
+    fromEvent<TouchEvent>(document, 'touchend'),
+    fromEvent<MouseEvent>(document, 'mouseup'),
+  )
 
   return merge(
     initials$.pipe(
@@ -28,38 +42,43 @@ export const drag$ = (
         containerRect,
       })),
     ),
-    fromEvent<MouseEvent>(dragContainer, 'mousedown').pipe(
-      switchMap((mouseDownEvent) => {
+    startEvent$.pipe(
+      switchMap((startEvent) => {
         containerRect = dragContainer.getBoundingClientRect();
 
-        mouseDownEvent.preventDefault();
-        mouseDownEvent.stopPropagation();
+        startEvent.preventDefault();
+        startEvent.stopPropagation();
 
-        return fromEvent<MouseEvent>(document, 'mousemove').pipe(
-          startWith(mouseDownEvent),
-          map((event) => {
-            return {
-              left: Math.max(
-                0,
-                Math.min(
-                  containerRect.width,
-                  event.clientX - containerRect.left,
-                ),
-              ),
-              top: Math.max(
-                0,
-                Math.min(
-                  containerRect.height,
-                  event.clientY - containerRect.top,
-                ),
-              ),
-              containerRect,
+        return moveEvent$.pipe(
+          startWith(startEvent),
+          map(moveEvent => {
+            if (moveEvent instanceof TouchEvent) {
+              const { clientX, clientY } = moveEvent.touches[0];
+
+              return { clientX, clientY };
             }
+
+            return { clientX: moveEvent.clientX, clientY: moveEvent.clientY };
           }),
-          distinctUntilChanged(
-            (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr),
-          ),
-          takeUntil(fromEvent<MouseEvent>(document, 'mouseup')),
+          map(({ clientX, clientY }) => ({
+            left: Math.max(
+              0,
+              Math.min(
+                containerRect.width,
+                clientX - containerRect.left,
+              ),
+            ),
+            top: Math.max(
+              0,
+              Math.min(
+                containerRect.height,
+                clientY - containerRect.top,
+              ),
+            ),
+            containerRect,
+          })
+        ),
+        takeUntil(endEvent$),
         );
       }),
     ),
