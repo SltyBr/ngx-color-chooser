@@ -49,7 +49,7 @@ import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './
     </div>
     <div class="settings">
       <div class="preview" [ngStyle]="{
-        '--input-color': inputColor(),
+        '--input-color': initialColor,
         '--output-color': hexaColor,
       }" (click)="onCopied.emit(hexaColor)">
         <div class="clipboard">
@@ -138,7 +138,7 @@ import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './
   host: {
     '[style.width.px]': 'width()',
     '[style.height.px]': 'height()',
-  }
+  },
 })
 export class ColorChooserComponent implements OnChanges {
   colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
@@ -210,8 +210,7 @@ export class ColorChooserComponent implements OnChanges {
     source: () => this.colorPanelHandler(),
     computation: (colorPanelHandler) => {
       return colorPanelHandler.nativeElement.getBoundingClientRect();
-    },
-    equal: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+    }
   });
   colorHandlerPos = computed<{ left: number, top: number }>(() => {
     const { width, height } = this.colorContainerRect();
@@ -252,6 +251,8 @@ export class ColorChooserComponent implements OnChanges {
     return left;
   });
 
+  initialColor!: string;
+
   ngOnChanges(changes: SimpleChanges): void {
     const inputColor = changes['inputColor'];
 
@@ -261,6 +262,7 @@ export class ColorChooserComponent implements OnChanges {
         const { h: prevHue } = rgbToHsv(prevColor.r, prevColor.g, prevColor.b);
         const { r, g, b, a } = hexaToRgba(inputColor.currentValue);
         const { h, s, v } = rgbToHsv(r, g, b, prevHue);
+        this.initialColor = inputColor.currentValue;
 
         this.hue.set(h);
         this.saturation.set(s);
@@ -275,6 +277,7 @@ export class ColorChooserComponent implements OnChanges {
       read: () => {
         const { r, g, b } = hexaToRgba(this.inputColor());
         const { h, s, v } = rgbToHsv(r, g, b);
+        this.initialColor = this.inputColor();
 
         this.hue.set(h);
         this.saturation.set(s);

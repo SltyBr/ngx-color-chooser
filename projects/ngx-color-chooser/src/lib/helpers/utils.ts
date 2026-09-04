@@ -83,7 +83,7 @@ export function rgbToHsv(r: number, g: number, b: number, prevHue?: number): HSV
   
   if (h < 0) h += 360;
   
-  return { h, s, v };
+  return { h: Math.round(h), s, v };
 }
 
 export function hsvToRgb(h: number, s: number, v: number): RGBA {
@@ -165,8 +165,8 @@ export function hslToHsv(h: number, s: number, l: number): HSV {
   
   return {
     h: h,
-    s: Math.round(sV),
-    v: Math.round(v)
+    s: sV,
+    v: v
   };
 }
 
