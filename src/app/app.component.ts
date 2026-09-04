@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
-import { ColorChooserComponent } from 'ngx-color-chooser';
+import { AzColorPicker } from 'az-color-picker';
 
 @Component({
     selector: 'app-root',
-    imports: [ColorChooserComponent],
+    imports: [AzColorPicker],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'demo-color-chooser';
+  title = 'demo-color-picker';
   color = '#5d5ff0';
 
   test(value: any): void {

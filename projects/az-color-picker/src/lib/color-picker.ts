@@ -26,14 +26,14 @@ import { AzDragEvent, DragContainer } from './drag.directive';
 import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './helpers/utils';
 
 @Component({
-  selector: 'ngx-color-chooser',
+  selector: 'az-color-picker',
   imports: [NgStyle, ReactiveFormsModule, DragContainer],
   template: `
     @let hexaColor = hexa();
     @let hueColorValue = hueColor();
 
     <div
-      class="color-chooser"
+      class="color-picker"
       [azDragContainer]="{ topCoef: (1 - value()), leftCoef: saturation() }"
       (azDrag)="updateColorPanelHandlerPos($event)"
       [ngStyle]="{
@@ -49,7 +49,7 @@ import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './
     </div>
     <div class="settings">
       <div class="preview" [ngStyle]="{
-        '--input-color': inputColor(),
+        '--input-color': initialColor,
         '--output-color': hexaColor,
       }" (click)="onCopied.emit(hexaColor)">
         <div class="clipboard">
@@ -133,14 +133,14 @@ import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './
       <button (click)="onSubmit.emit(hexaColor)">{{ submitBtnText() }}</button>
     </div>
   `,
-  styleUrls: ['color-chooser.component.scss'],
+  styleUrls: ['color-picker.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.width.px]': 'width()',
     '[style.height.px]': 'height()',
-  }
+  },
 })
-export class ColorChooserComponent implements OnChanges {
+export class AzColorPicker implements OnChanges {
   colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
   hueHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('hueHandler');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');
@@ -210,8 +210,7 @@ export class ColorChooserComponent implements OnChanges {
     source: () => this.colorPanelHandler(),
     computation: (colorPanelHandler) => {
       return colorPanelHandler.nativeElement.getBoundingClientRect();
-    },
-    equal: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+    }
   });
   colorHandlerPos = computed<{ left: number, top: number }>(() => {
     const { width, height } = this.colorContainerRect();
@@ -252,6 +251,8 @@ export class ColorChooserComponent implements OnChanges {
     return left;
   });
 
+  initialColor!: string;
+
   ngOnChanges(changes: SimpleChanges): void {
     const inputColor = changes['inputColor'];
 
@@ -261,6 +262,7 @@ export class ColorChooserComponent implements OnChanges {
         const { h: prevHue } = rgbToHsv(prevColor.r, prevColor.g, prevColor.b);
         const { r, g, b, a } = hexaToRgba(inputColor.currentValue);
         const { h, s, v } = rgbToHsv(r, g, b, prevHue);
+        this.initialColor = inputColor.currentValue;
 
         this.hue.set(h);
         this.saturation.set(s);
@@ -276,6 +278,7 @@ export class ColorChooserComponent implements OnChanges {
         const { r, g, b } = hexaToRgba(this.inputColor());
         const { h, s, v } = rgbToHsv(r, g, b);
 
+        this.initialColor = this.inputColor();
         this.hue.set(h);
         this.saturation.set(s);
         this.value.set(v);
@@ -304,7 +307,6 @@ export class ColorChooserComponent implements OnChanges {
           takeUntilDestroyed(this.destroyRef),
         ).subscribe(hexa => {
           const { r, g, b, a } = hexaToRgba(hexa);
-
           const { h, s, v } = rgbToHsv(r, g, b);
 
           this.hue.set(h);
@@ -327,7 +329,9 @@ export class ColorChooserComponent implements OnChanges {
         this.hexa$.pipe(
           skip(1),
           takeUntilDestroyed(this.destroyRef)
-        ).subscribe(value => this.inputColor.set(value));
+        ).subscribe(value => {
+          this.inputColor.set(value)
+        });
       },
     });
   }

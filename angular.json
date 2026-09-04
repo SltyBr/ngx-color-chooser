@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "demo-color-chooser": {
+    "demo-color-picker": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/demo-color-chooser",
+            "outputPath": "dist/demo-color-picker",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -64,10 +64,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "demo-color-chooser:build:production"
+              "buildTarget": "demo-color-picker:build:production"
             },
             "development": {
-              "buildTarget": "demo-color-chooser:build:development"
+              "buildTarget": "demo-color-picker:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -98,23 +98,23 @@
         }
       }
     },
-    "ngx-color-chooser": {
+    "az-color-picker": {
       "projectType": "library",
-      "root": "projects/ngx-color-chooser",
-      "sourceRoot": "projects/ngx-color-chooser/src",
+      "root": "projects/az-color-picker",
+      "sourceRoot": "projects/az-color-picker/src",
       "prefix": "lib",
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",
           "options": {
-            "project": "projects/ngx-color-chooser/ng-package.json"
+            "project": "projects/az-color-picker/ng-package.json"
           },
           "configurations": {
             "production": {
-              "tsConfig": "projects/ngx-color-chooser/tsconfig.lib.prod.json"
+              "tsConfig": "projects/az-color-picker/tsconfig.lib.prod.json"
             },
             "development": {
-              "tsConfig": "projects/ngx-color-chooser/tsconfig.lib.json"
+              "tsConfig": "projects/az-color-picker/tsconfig.lib.json"
             }
           },
           "defaultConfiguration": "production"
@@ -122,7 +122,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
-            "tsConfig": "projects/ngx-color-chooser/tsconfig.spec.json",
+            "tsConfig": "projects/az-color-picker/tsconfig.spec.json",
             "polyfills": [
               "zone.js",
               "zone.js/testing"

@@ -1,15 +1,15 @@
-<h1>Ngx color chooser</h1>
+<h1>Ngx color picker</h1>
 
 <label for="input" class="input">
   input
   <input id="input" type="text" [value]="color" (input)="color = $event.target.value">
 </label>
-<div class="color-chooser-container">
-  <ngx-color-chooser
-    class="color-chooser"
+<div class="color-picker-container">
+  <az-color-picker
+    class="color-picker"
     [(inputColor)]="color"
     (onSubmit)="onSubmit()"
-  ></ngx-color-chooser>
+  ></az-color-picker>
   <div class="color">
     output: {{ color }}
     <div class="color-box" [style.background-color]="color"></div>

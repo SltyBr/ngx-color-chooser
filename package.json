@@ -1,5 +1,5 @@
 {
-  "name": "demo-color-chooser",
+  "name": "demo-color-picker",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "deploy:beta": "ng build ngx-color-chooser && cd dist/ngx-color-chooser && npm publish --tag beta && cd ../.."
+    "deploy:beta": "ng build az-color-picker && cd dist/az-color-picker && npm publish --tag beta && cd ../..",
+    "deploy": "ng build az-color-picker && cd dist/az-color-picker && npm publish && cd ../.."
   },
   "private": true,
   "dependencies": {
