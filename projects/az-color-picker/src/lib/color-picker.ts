@@ -26,14 +26,14 @@ import { AzDragEvent, DragContainer } from './drag.directive';
 import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './helpers/utils';
 
 @Component({
-  selector: 'ngx-color-chooser',
+  selector: 'az-color-picker',
   imports: [NgStyle, ReactiveFormsModule, DragContainer],
   template: `
     @let hexaColor = hexa();
     @let hueColorValue = hueColor();
 
     <div
-      class="color-chooser"
+      class="color-picker"
       [azDragContainer]="{ topCoef: (1 - value()), leftCoef: saturation() }"
       (azDrag)="updateColorPanelHandlerPos($event)"
       [ngStyle]="{
@@ -133,14 +133,14 @@ import { hexaToRgba, hslToHsv, hsvToHsl, hsvToRgb, rgbToHex, rgbToHsv } from './
       <button (click)="onSubmit.emit(hexaColor)">{{ submitBtnText() }}</button>
     </div>
   `,
-  styleUrls: ['color-chooser.component.scss'],
+  styleUrls: ['color-picker.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.width.px]': 'width()',
     '[style.height.px]': 'height()',
   },
 })
-export class ColorChooserComponent implements OnChanges {
+export class AzColorPicker implements OnChanges {
   colorPanelHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('colorHandler');
   hueHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('hueHandler');
   alphaHandler: Signal<ElementRef<HTMLElement>> = viewChild.required('alphaHandler');

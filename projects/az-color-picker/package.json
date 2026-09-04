@@ -1,5 +1,5 @@
 {
-  "name": "@am-zero/ngx-color-chooser",
+  "name": "@am-zero/color-picker",
   "version": "0.0.6",
   "peerDependencies": {
     "@angular/common": "^20.3.28",
