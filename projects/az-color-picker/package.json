@@ -1,6 +1,6 @@
 {
   "name": "@am-zero/color-picker",
-  "version": "0.0.6",
+  "version": "0.0.2",
   "peerDependencies": {
     "@angular/common": "^20.3.28",
     "@angular/core": "^20.3.28"
@@ -11,5 +11,6 @@
   "sideEffects": false,
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "license": "MIT"
 }
