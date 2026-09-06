@@ -7,8 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "deploy:beta": "ng build az-color-picker && cd dist/az-color-picker && npm publish --tag beta && cd ../..",
-    "deploy": "ng build az-color-picker && cd dist/az-color-picker && npm publish && cd ../.."
+    "release:beta": "ng build az-color-picker && cd dist/az-color-picker && npm publish --tag beta && cd ../..",
+    "release": "ng build az-color-picker && cd dist/az-color-picker && npm publish && cd ../.."
   },
   "private": true,
   "dependencies": {

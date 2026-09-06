@@ -1,6 +1,6 @@
 {
   "name": "@am-zero/color-picker",
-  "version": "0.0.2",
+  "version": "0.0.6",
   "peerDependencies": {
     "@angular/common": "^20.3.28",
     "@angular/core": "^20.3.28"
@@ -12,5 +12,15 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT"
+  "keywords": [
+    "angular",
+    "color-picker",
+    "angular color-picker",
+    "ngx-color-picker"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SltyBr/am-zero-ngx-color-picker"
+  }
 }
