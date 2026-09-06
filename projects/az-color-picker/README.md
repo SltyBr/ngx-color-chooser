@@ -38,10 +38,10 @@ inputColor is model signal with hex-string type (opacity hex code is optional)
 there is also width and height inputs, without this params, component will fit to 100% width of parent container
 ```typescript
 import { Component } from '@angular/core';
-import {EditorConfig, ST_BUTTONS} from 'ngx-simple-text-editor';
 
 @Component({
   selector: 'app-root',
+  imports: [AzColorPicker],
   template: `
     <az-color-picker  [(inputColor)]="color" />
   `,

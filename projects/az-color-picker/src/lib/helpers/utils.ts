@@ -51,7 +51,7 @@ export function hexaToRgba(hex: string): RGBA {
     throw new Error('Invalid HEX color format');
   }
   
-  return { r, g, b, a };
+  return { r, g, b, a: +a.toFixed(2) };
 }
 
 export function rgbToHsv(r: number, g: number, b: number, prevHue?: number): HSV {

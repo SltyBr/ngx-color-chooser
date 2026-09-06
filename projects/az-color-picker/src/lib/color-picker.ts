@@ -275,13 +275,14 @@ export class AzColorPicker implements OnChanges {
   constructor() {
     afterNextRender({
       read: () => {
-        const { r, g, b } = hexaToRgba(this.inputColor());
+        const { r, g, b, a } = hexaToRgba(this.inputColor());
         const { h, s, v } = rgbToHsv(r, g, b);
 
         this.initialColor = this.inputColor();
         this.hue.set(h);
         this.saturation.set(s);
         this.value.set(v);
+        this.alpha.set(a);
 
         this.alphaControl.valueChanges.pipe(
           throttleTime(16),
